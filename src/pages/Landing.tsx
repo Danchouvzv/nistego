@@ -1,20 +1,30 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { motion, useScroll, useTransform, useMotionValue, useSpring, AnimatePresence } from 'framer-motion';
+import { motion, useScroll, useTransform, useMotionValue, useSpring, AnimatePresence, useAnimation } from 'framer-motion';
+import type { Variants } from 'framer-motion';
 import Button from '../shared/ui/Button';
+import { useMediaQuery } from 'react-responsive';
+
+const MAX_TRAIL_POINTS = 20;
 
 const Landing: React.FC = () => {
   const { t } = useTranslation();
   const [activeSection, setActiveSection] = useState<string>('hero');
   const heroRef = useRef<HTMLDivElement>(null);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
-  const [cursorVariant, setCursorVariant] = useState("default");
+  const [trailPoints, setTrailPoints] = useState<{x: number, y: number}[]>([]);
+  const [isHovering, setIsHovering] = useState(false);
+  const [isClicking, setIsClicking] = useState(false);
+  
+  // Cursor motion values
   const cursorX = useMotionValue(-100);
   const cursorY = useMotionValue(-100);
-  const springConfig = { damping: 25, stiffness: 700 };
+  const cursorSize = useMotionValue(10);
+  const springConfig = { damping: 25, stiffness: 300 };
   const cursorXSpring = useSpring(cursorX, springConfig);
   const cursorYSpring = useSpring(cursorY, springConfig);
+  const cursorSizeSpring = useSpring(cursorSize, { damping: 15, stiffness: 150 });
 
   // Parallax scrolling effect
   const { scrollYProgress } = useScroll();
@@ -25,13 +35,37 @@ const Landing: React.FC = () => {
     const handleMouseMove = (e: MouseEvent) => {
       const { clientX, clientY } = e;
       setMousePosition({ x: clientX, y: clientY });
-      cursorX.set(clientX - 16);
-      cursorY.set(clientY - 16);
+      cursorX.set(clientX);
+      cursorY.set(clientY);
+      
+      // Update trail points
+      setTrailPoints(prev => {
+        const newPoints = [...prev, { x: clientX, y: clientY }];
+        // Keep only the last MAX_TRAIL_POINTS points
+        return newPoints.slice(-MAX_TRAIL_POINTS);
+      });
+    };
+    
+    const handleMouseDown = () => {
+      setIsClicking(true);
+      cursorSize.set(8);
+      setTimeout(() => setIsClicking(false), 300);
+    };
+    
+    const handleMouseUp = () => {
+      cursorSize.set(10);
     };
 
     window.addEventListener("mousemove", handleMouseMove);
-    return () => window.removeEventListener("mousemove", handleMouseMove);
-  }, [cursorX, cursorY]);
+    window.addEventListener("mousedown", handleMouseDown);
+    window.addEventListener("mouseup", handleMouseUp);
+    
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mousedown", handleMouseDown);
+      window.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [cursorX, cursorY, cursorSize]);
 
   // Intersection observer for section detection
   useEffect(() => {
@@ -89,29 +123,42 @@ const Landing: React.FC = () => {
     }
   };
 
-  const cursorVariants = {
+  const cursorVariants: Variants = {
     default: {
-      width: 32,
-      height: 32,
-      backgroundColor: "rgba(255, 255, 255, 0.2)",
-      mixBlendMode: "difference"
+      height: 10,
+      width: 10,
+      borderRadius: "50%",
+      backgroundColor: "rgba(0, 200, 151, 0.4)",
+      mixBlendMode: "difference" as const,
+      filter: "blur(1px)",
+      boxShadow: "0 0 5px 1px rgba(0, 200, 151, 0.6)",
+      x: 0,
+      y: 0
     },
-    button: {
-      width: 80,
-      height: 80,
-      backgroundColor: "rgba(255, 255, 255, 0.5)",
-      mixBlendMode: "difference"
+    hover: {
+      height: 30,
+      width: 30,
+      backgroundColor: "rgba(0, 200, 151, 0.6)",
+      filter: "blur(2px)",
+      boxShadow: "0 0 10px 2px rgba(0, 200, 151, 0.8)",
+      x: 0,
+      y: 0
     },
-    text: {
-      width: 64,
-      height: 64,
-      backgroundColor: "rgba(255, 255, 255, 0.3)",
-      mixBlendMode: "difference"
+    click: {
+      height: 8,
+      width: 8,
+      backgroundColor: "rgba(0, 86, 199, 0.7)",
+      filter: "blur(0px)",
+      boxShadow: "0 0 15px 3px rgba(0, 86, 199, 0.9)",
+      x: 0,
+      y: 0
     }
   };
 
-  const morphingPathVariants = {
-    animate: {
+  const morphingPathVariants: Variants = {
+    initial: { opacity: 0.7 },
+    animate: { 
+      opacity: 0.7,
       d: [
         "M0,0 L100,0 L100,100 L0,100 Z",
         "M0,0 L100,0 L90,100 L10,100 Z",
@@ -125,7 +172,7 @@ const Landing: React.FC = () => {
         duration: 20,
         ease: "easeInOut",
         repeat: Infinity,
-        repeatType: "reverse"
+        repeatType: "reverse" as const
       }
     }
   };
@@ -184,27 +231,77 @@ const Landing: React.FC = () => {
     { key: 'q2', answer: 'a2' }
   ];
 
-  const handleMouseEnter = (variant: string) => {
-    setCursorVariant(variant);
+  const handleMouseEnter = () => {
+    setIsHovering(true);
+    cursorSize.set(30);
   };
 
   const handleMouseLeave = () => {
-    setCursorVariant("default");
+    setIsHovering(false);
+    cursorSize.set(10);
   };
 
   return (
-    <div className="overflow-hidden">
-      {/* Custom Cursor for Desktop */}
-      <div className="hidden md:block">
+    <div className="overflow-hidden cursor-none">
+      {/* Custom Creative Cursor with Trail Effect */}
+      <div className="fixed top-0 left-0 w-full h-full pointer-events-none z-50">
+        {/* Trail Points */}
+        {trailPoints.map((point, i) => {
+          const size = Math.max(2, (i / MAX_TRAIL_POINTS) * 8);
+          const opacity = (i / MAX_TRAIL_POINTS) * 0.7;
+          
+          return (
+            <motion.div
+              key={`trail-${i}`}
+              className="fixed rounded-full bg-primary"
+              style={{
+                width: size,
+                height: size,
+                opacity: opacity,
+                x: point.x - size / 2,
+                y: point.y - size / 2,
+                zIndex: 9999
+              }}
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ duration: 0.1 }}
+            />
+          );
+        })}
+        
+        {/* Main Cursor */}
         <motion.div
-          className="fixed top-0 left-0 w-8 h-8 rounded-full pointer-events-none z-50"
+          className="fixed top-0 left-0 rounded-full pointer-events-none bg-blend-difference"
           style={{
             x: cursorXSpring,
             y: cursorYSpring,
+            width: cursorSizeSpring,
+            height: cursorSizeSpring,
+            transform: 'translate(-50%, -50%)',
           }}
           variants={cursorVariants}
-          animate={cursorVariant}
+          animate={isClicking ? "click" : isHovering ? "hover" : "default"}
+          transition={{ duration: 0.2 }}
         />
+        
+        {/* Ripple Effect on Click */}
+        <AnimatePresence>
+          {isClicking && (
+            <motion.div
+              className="fixed rounded-full border-2 border-secondary pointer-events-none"
+              style={{
+                x: mousePosition.x - 20,
+                y: mousePosition.y - 20,
+                translateX: "-50%",
+                translateY: "-50%"
+              }}
+              initial={{ width: 10, height: 10, opacity: 1 }}
+              animate={{ width: 80, height: 80, opacity: 0 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.5 }}
+            />
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Hero Section */}
@@ -238,7 +335,7 @@ const Landing: React.FC = () => {
             <motion.path
               d="M0,0 L100,0 L100,100 L0,100 Z"
               fill="url(#heroGradient)"
-              initial={{ opacity: 0.7 }}
+              initial="initial"
               variants={morphingPathVariants}
               animate="animate"
             />
@@ -309,7 +406,7 @@ const Landing: React.FC = () => {
             animate="visible"
             variants={staggerContainer}
             className="max-w-4xl mx-auto text-center"
-            onMouseEnter={() => handleMouseEnter("text")}
+            onMouseEnter={handleMouseEnter}
             onMouseLeave={handleMouseLeave}
           >
             <motion.h1 
@@ -359,7 +456,7 @@ const Landing: React.FC = () => {
               <motion.div
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                onMouseEnter={() => handleMouseEnter("button")}
+                onMouseEnter={handleMouseEnter}
                 onMouseLeave={handleMouseLeave}
               >
                 <Link to="/auth/register">
@@ -388,7 +485,7 @@ const Landing: React.FC = () => {
               <motion.div
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                onMouseEnter={() => handleMouseEnter("button")}
+                onMouseEnter={handleMouseEnter}
                 onMouseLeave={handleMouseLeave}
               >
                 <Link to="#demo">
@@ -428,7 +525,7 @@ const Landing: React.FC = () => {
               duration: 2,
               ease: "easeInOut" 
             }}
-            onMouseEnter={() => handleMouseEnter("button")}
+            onMouseEnter={handleMouseEnter}
             onMouseLeave={handleMouseLeave}
           >
             <svg 
@@ -458,6 +555,8 @@ const Landing: React.FC = () => {
               perspectiveOrigin: "center", 
               y
             }}
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
           >
             <motion.div
               className="relative w-full h-full"
