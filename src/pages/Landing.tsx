@@ -44,8 +44,84 @@ const Landing: React.FC = () => {
   return (
     <div className="overflow-hidden">
       {/* Hero Section */}
-      <section className="relative min-h-screen bg-gradient-to-br from-primary to-secondary text-white flex items-center">
-        <div className="container mx-auto px-4 py-24 z-10 relative">
+      <section className="relative min-h-screen bg-gradient-to-br from-primary to-secondary overflow-hidden">
+        {/* Background Elements */}
+        <div className="absolute inset-0 overflow-hidden">
+          {/* Morphing Background SVG */}
+          <svg className="absolute w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
+            <motion.path
+              d="M0,0 L100,0 L100,100 L0,100 Z"
+              fill="url(#heroGradient)"
+              initial={{ opacity: 0.7 }}
+              animate={{ 
+                opacity: 0.7,
+                d: [
+                  "M0,0 L100,0 L100,100 L0,100 Z",
+                  "M0,0 L100,0 L95,100 L5,100 Z",
+                  "M0,0 L100,0 L90,100 L10,100 Z",
+                  "M0,0 L100,0 L95,100 L5,100 Z",
+                  "M0,0 L100,0 L100,100 L0,100 Z"
+                ]
+              }}
+              transition={{ 
+                repeat: Infinity, 
+                duration: 20,
+                ease: "easeInOut" 
+              }}
+            />
+            <defs>
+              <linearGradient id="heroGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="rgba(0, 200, 151, 0.8)" />
+                <stop offset="100%" stopColor="rgba(0, 86, 199, 0.8)" />
+              </linearGradient>
+            </defs>
+          </svg>
+          
+          {/* Floating Elements */}
+          <div className="absolute inset-0">
+            <motion.div 
+              className="absolute top-1/4 left-1/5 w-16 h-16 sm:w-20 sm:h-20 bg-white/10 rounded-xl"
+              animate={{
+                y: [0, -20, 0],
+                rotate: [0, 10, 0],
+              }}
+              transition={{
+                duration: 6,
+                repeat: Infinity,
+                ease: "easeInOut"
+              }}
+            />
+            
+            <motion.div 
+              className="absolute bottom-1/4 right-1/5 w-24 h-24 sm:w-32 sm:h-32 bg-white/10 rounded-full"
+              animate={{
+                y: [0, 30, 0],
+                x: [0, -20, 0],
+              }}
+              transition={{
+                duration: 8,
+                repeat: Infinity,
+                ease: "easeInOut"
+              }}
+            />
+            
+            <motion.div 
+              className="absolute top-1/2 right-1/3 w-12 h-12 sm:w-16 sm:h-16 bg-white/10 rounded-lg rotate-45"
+              animate={{
+                y: [0, -15, 0],
+                x: [0, 15, 0],
+                rotate: [45, 60, 45]
+              }}
+              transition={{
+                duration: 7,
+                repeat: Infinity,
+                ease: "easeInOut"
+              }}
+            />
+          </div>
+        </div>
+
+        <div className="container mx-auto px-4 py-16 sm:py-24 relative z-10 flex flex-col justify-center items-center min-h-screen">
           <motion.div
             initial="hidden"
             animate="visible"
@@ -54,76 +130,75 @@ const Landing: React.FC = () => {
           >
             <motion.h1 
               variants={fadeInUp}
-              className="text-4xl md:text-6xl font-bold mb-6"
+              className="text-5xl sm:text-6xl md:text-7xl font-bold mb-6 text-white leading-tight"
             >
-              {t('landing.tagline')}
+              <span className="inline-block bg-clip-text text-transparent bg-gradient-to-r from-white to-white/80">
+                {t('landing.tagline')}
+              </span>
             </motion.h1>
             
             <motion.p 
               variants={fadeInUp}
-              className="text-xl md:text-2xl mb-10 text-white/90"
+              className="text-xl md:text-2xl mb-12 text-white/90 max-w-2xl mx-auto"
             >
               {t('landing.subtitle')}
             </motion.p>
             
-            <motion.div variants={fadeInUp}>
+            <motion.div 
+              variants={fadeInUp}
+              className="flex flex-col sm:flex-row justify-center gap-4 sm:gap-6"
+            >
               <Link to="/auth/register">
                 <Button 
                   variant="light" 
                   size="lg"
-                  className="shadow-lg shadow-primary/20"
+                  className="shadow-lg shadow-primary/20 w-full sm:w-auto px-8 py-4 text-primary font-medium rounded-xl hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
                 >
                   {t('landing.getStarted')}
                 </Button>
               </Link>
+              
+              <Link to="#demo">
+                <Button 
+                  variant="outline" 
+                  size="lg"
+                  className="border-2 border-white/70 text-white hover:bg-white/10 w-full sm:w-auto px-8 py-4 font-medium rounded-xl transition-all duration-300 mt-4 sm:mt-0"
+                >
+                  {t('landing.watchDemo')}
+                </Button>
+              </Link>
             </motion.div>
           </motion.div>
+          
+          {/* Animated down arrow */}
+          <motion.div 
+            className="absolute bottom-8 left-1/2 transform -translate-x-1/2"
+            animate={{ 
+              y: [0, 10, 0],
+              opacity: [0.6, 1, 0.6]
+            }}
+            transition={{ 
+              repeat: Infinity, 
+              duration: 2,
+              ease: "easeInOut" 
+            }}
+          >
+            <svg 
+              xmlns="http://www.w3.org/2000/svg" 
+              className="h-8 w-8 text-white/70" 
+              fill="none" 
+              viewBox="0 0 24 24" 
+              stroke="currentColor"
+            >
+              <path 
+                strokeLinecap="round" 
+                strokeLinejoin="round" 
+                strokeWidth={2} 
+                d="M19 14l-7 7m0 0l-7-7m7 7V3" 
+              />
+            </svg>
+          </motion.div>
         </div>
-        
-        {/* Background Elements */}
-        <div className="absolute top-0 right-0 w-1/2 h-1/2 bg-white/5 rounded-full blur-3xl transform translate-x-1/4 -translate-y-1/4"></div>
-        <div className="absolute bottom-0 left-0 w-1/2 h-1/2 bg-black/5 rounded-full blur-3xl transform -translate-x-1/4 translate-y-1/4"></div>
-        
-        {/* Floating Shapes */}
-        <motion.div 
-          className="absolute top-1/4 left-1/5 w-20 h-20 bg-white/10 rounded-xl"
-          animate={{
-            y: [0, -20, 0],
-            rotate: [0, 10, 0],
-          }}
-          transition={{
-            duration: 6,
-            repeat: Infinity,
-            ease: "easeInOut"
-          }}
-        />
-        
-        <motion.div 
-          className="absolute bottom-1/4 right-1/5 w-32 h-32 bg-white/10 rounded-full"
-          animate={{
-            y: [0, 30, 0],
-            x: [0, -20, 0],
-          }}
-          transition={{
-            duration: 8,
-            repeat: Infinity,
-            ease: "easeInOut"
-          }}
-        />
-        
-        <motion.div 
-          className="absolute top-1/2 right-1/3 w-16 h-16 bg-white/10 rounded-lg rotate-45"
-          animate={{
-            y: [0, -15, 0],
-            x: [0, 15, 0],
-            rotate: [45, 60, 45]
-          }}
-          transition={{
-            duration: 7,
-            repeat: Infinity,
-            ease: "easeInOut"
-          }}
-        />
       </section>
 
       {/* Benefits Section */}

@@ -4,30 +4,41 @@ import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { auth } from '../../firebase';
 import ThemeToggle from './ThemeToggle';
-import LanguageSelector from './LanguageSelector';
 
 export const Header: React.FC = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
   const location = useLocation();
   const navigate = useNavigate();
 
   const isLandingPage = location.pathname === '/';
   const isAuthenticated = auth.currentUser !== null;
 
+  // Handle scroll effect
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 10);
     };
 
     window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Handle online/offline status
+  useEffect(() => {
+    const handleOnlineStatus = () => setIsOnline(navigator.onLine);
+    window.addEventListener('online', handleOnlineStatus);
+    window.addEventListener('offline', handleOnlineStatus);
+    
     return () => {
-      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('online', handleOnlineStatus);
+      window.removeEventListener('offline', handleOnlineStatus);
     };
   }, []);
 
-  // Закрываем мобильное меню при изменении маршрута
+  // Close mobile menu on route change
   useEffect(() => {
     setIsMenuOpen(false);
   }, [location.pathname]);
@@ -39,6 +50,28 @@ export const Header: React.FC = () => {
     } catch (error) {
       console.error('Error signing out:', error);
     }
+  };
+
+  // Toggle language
+  const toggleLanguage = () => {
+    const currentLang = i18n.language;
+    if (currentLang === 'en') {
+      i18n.changeLanguage('ru');
+    } else if (currentLang === 'ru') {
+      i18n.changeLanguage('kk');
+    } else {
+      i18n.changeLanguage('en');
+    }
+  };
+
+  // Get current language code
+  const getCurrentLanguageCode = () => {
+    const langMap: Record<string, string> = {
+      'en': 'EN',
+      'ru': 'RU',
+      'kk': 'KZ'
+    };
+    return langMap[i18n.language] || 'EN';
   };
 
   const headerClasses = `fixed top-0 left-0 right-0 z-50 transition-all duration-300 
@@ -72,6 +105,7 @@ export const Header: React.FC = () => {
     !item.requireAuth || (item.requireAuth && isAuthenticated)
   );
 
+  // Animation variants
   const logoVariants = {
     hover: { 
       scale: 1.05,
@@ -99,25 +133,82 @@ export const Header: React.FC = () => {
     }
   };
 
+  const drawerVariants = {
+    hidden: { x: "-100%", opacity: 0 },
+    visible: { 
+      x: 0, 
+      opacity: 1,
+      transition: {
+        type: "spring",
+        stiffness: 300,
+        damping: 30
+      }
+    },
+    exit: { 
+      x: "-100%", 
+      opacity: 0,
+      transition: {
+        type: "spring",
+        stiffness: 300,
+        damping: 30
+      }
+    }
+  };
+
+  const overlayVariants = {
+    hidden: { opacity: 0 },
+    visible: { 
+      opacity: 0.5,
+      transition: { duration: 0.2 }
+    },
+    exit: { 
+      opacity: 0,
+      transition: { duration: 0.2 }
+    }
+  };
+
   return (
     <header className={headerClasses}>
       <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between">
-          {/* Logo */}
-          <motion.div 
-            variants={logoVariants}
-            whileHover="hover"
-            className="flex-shrink-0"
-          >
-            <Link to={isAuthenticated ? '/dashboard' : '/'} className="flex items-center">
-              <div className="bg-gradient-to-r from-primary to-secondary w-10 h-10 rounded-lg flex items-center justify-center mr-2">
-                <span className="text-white text-lg font-bold">N</span>
-              </div>
-              <h1 className={`text-xl font-bold ${textClasses}`}>NIStego</h1>
-            </Link>
-          </motion.div>
+        <div className="flex items-center justify-between h-12">
+          {/* Logo and Hamburger */}
+          <div className="flex items-center">
+            <button 
+              onClick={() => setIsMenuOpen(!isMenuOpen)} 
+              className={`p-2 mr-2 rounded-md focus:outline-none md:hidden ${textClasses}`}
+              aria-label="Menu"
+            >
+              <motion.svg 
+                className="h-6 w-6" 
+                fill="none" 
+                viewBox="0 0 24 24" 
+                stroke="currentColor"
+                animate={{ rotate: isMenuOpen ? 90 : 0 }}
+                transition={{ duration: 0.3 }}
+              >
+                {isMenuOpen ? (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                ) : (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                )}
+              </motion.svg>
+            </button>
+            
+            <motion.div 
+              variants={logoVariants}
+              whileHover="hover"
+              className="flex-shrink-0"
+            >
+              <Link to={isAuthenticated ? '/dashboard' : '/'} className="flex items-center">
+                <div className="bg-gradient-to-r from-primary to-secondary w-8 h-8 rounded-lg flex items-center justify-center mr-2">
+                  <span className="text-white text-sm font-bold">N</span>
+                </div>
+                <h1 className={`text-lg font-bold ${textClasses}`}>NIStego</h1>
+              </Link>
+            </motion.div>
+          </div>
 
-          {/* Desktop Nav Links */}
+          {/* Desktop Nav Links - Hidden on Mobile */}
           <nav className="hidden md:flex md:items-center md:space-x-1">
             {filteredNavItems.map((item) => (
               <Link
@@ -129,37 +220,75 @@ export const Header: React.FC = () => {
                     : `${textClasses} hover:bg-gray-100 dark:hover:bg-gray-800`}`
                 }
               >
-                {item.icon}
-                <span>{item.label}</span>
+                <span className="md:hidden lg:inline">{item.icon}</span>
+                <span className="lg:inline">{item.label}</span>
               </Link>
             ))}
           </nav>
 
-          {/* Right side items */}
-          <div className="flex items-center space-x-3">
-            <ThemeToggle />
-            <LanguageSelector />
+          {/* Right side items - Optimized for Mobile */}
+          <div className="flex items-center space-x-2 sm:space-x-3">
+            {/* Offline Indicator */}
+            {!isOnline && (
+              <div className="bg-warning/10 text-warning px-2 py-1 rounded-md text-xs flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 mr-1">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
+                </svg>
+                <span className="hidden sm:inline">Offline</span>
+              </div>
+            )}
             
+            {/* Theme Toggle */}
+            <ThemeToggle />
+            
+            {/* Language Toggle - Icon Only */}
+            <button 
+              onClick={toggleLanguage}
+              className={`p-2 rounded-md focus:outline-none transition-colors ${textClasses} hover:bg-gray-100 dark:hover:bg-gray-800`}
+              aria-label="Change Language"
+            >
+              <div className="flex items-center space-x-1">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="m10.5 21 5.25-11.25L21 21m-9-3h7.5M3 5.621a48.474 48.474 0 0 1 6-.371m0 0c1.12 0 2.233.038 3.334.114M9 5.25V3m3.334 2.364C11.176 10.658 7.69 15.08 3 17.502m9.334-12.138c.896.061 1.785.147 2.666.257m-4.589 8.495a18.023 18.023 0 0 1-3.827-5.802" />
+                </svg>
+                <span className="text-xs font-medium">{getCurrentLanguageCode()}</span>
+              </div>
+            </button>
+            
+            {/* User Avatar/Login Buttons */}
             {isAuthenticated ? (
               <motion.div
                 whileHover={{ scale: 1.05 }}
-                className="flex items-center space-x-2 cursor-pointer"
-                onClick={() => navigate('/profile')}
+                className="relative group"
               >
-                <div className="bg-gradient-to-r from-primary to-secondary text-white w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shadow-md">
+                <div 
+                  className="bg-gradient-to-r from-primary to-secondary text-white w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold shadow-md cursor-pointer"
+                  onClick={() => navigate('/profile')}
+                >
                   {auth.currentUser?.displayName?.charAt(0) || 'U'}
                 </div>
-                <div className="hidden sm:block">
-                  <span className={`text-sm font-medium ${textClasses}`}>
-                    {auth.currentUser?.displayName || 'User'}
-                  </span>
+                <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg overflow-hidden z-20 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300">
+                  <div className="py-1">
+                    <Link 
+                      to="/profile" 
+                      className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+                    >
+                      {t('profile.title')}
+                    </Link>
+                    <button
+                      className="block w-full text-left px-4 py-2 text-sm text-error hover:bg-error/5 transition-colors duration-200"
+                      onClick={handleSignOut}
+                    >
+                      {t('profile.logout')}
+                    </button>
+                  </div>
                 </div>
               </motion.div>
             ) : (
               <div className="flex space-x-2">
                 <Link 
                   to="/auth/login" 
-                  className={`text-sm font-medium px-4 py-2 rounded-md transition-all duration-200
+                  className={`text-xs sm:text-sm font-medium px-3 py-1.5 sm:px-4 sm:py-2 rounded-md transition-all duration-200
                     ${isLandingPage && !isScrolled
                       ? 'bg-white text-primary hover:bg-white/90 shadow-md hover:shadow-lg'
                       : 'bg-primary text-white hover:bg-primary/90 shadow-md hover:shadow-lg hover:-translate-y-0.5'
@@ -170,7 +299,7 @@ export const Header: React.FC = () => {
                 </Link>
                 <Link 
                   to="/auth/register" 
-                  className={`text-sm font-medium px-4 py-2 rounded-md transition-all duration-200
+                  className={`hidden sm:block text-sm font-medium px-4 py-2 rounded-md transition-all duration-200
                     ${isLandingPage && !isScrolled
                       ? 'border border-white text-white hover:bg-white/10'
                       : 'border border-primary text-primary dark:text-white dark:border-white hover:bg-primary/5 dark:hover:bg-white/5'
@@ -181,52 +310,43 @@ export const Header: React.FC = () => {
                 </Link>
               </div>
             )}
-
-            {/* Mobile menu button */}
-            <div className="md:hidden">
-              <button 
-                className={`p-2 rounded-md focus:outline-none ${textClasses}`}
-                onClick={() => setIsMenuOpen(!isMenuOpen)}
-                aria-expanded={isMenuOpen}
-              >
-                <motion.svg 
-                  className="h-6 w-6" 
-                  fill="none" 
-                  viewBox="0 0 24 24" 
-                  stroke="currentColor"
-                  animate={{ rotate: isMenuOpen ? 90 : 0 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  {isMenuOpen ? (
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  ) : (
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                  )}
-                </motion.svg>
-              </button>
-            </div>
           </div>
         </div>
+      </div>
 
-        {/* Mobile menu */}
-        <AnimatePresence>
-          {isMenuOpen && (
-            <motion.div 
-              className="md:hidden bg-white dark:bg-gray-800 mt-2 rounded-lg shadow-lg overflow-hidden"
-              variants={mobileMenuVariants}
+      {/* Drawer Menu (Mobile) */}
+      <AnimatePresence>
+        {isMenuOpen && (
+          <>
+            {/* Overlay */}
+            <motion.div
+              className="fixed inset-0 bg-black z-40"
+              variants={overlayVariants}
               initial="hidden"
               animate="visible"
               exit="exit"
+              onClick={() => setIsMenuOpen(false)}
+            />
+            
+            {/* Drawer */}
+            <motion.div
+              className="fixed top-14 left-0 bottom-0 w-64 bg-white dark:bg-gray-900 shadow-xl z-50 overflow-y-auto"
+              variants={drawerVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+              role="dialog"
+              aria-modal="true"
             >
-              <div className="p-2 space-y-1">
+              <div className="py-4">
                 {filteredNavItems.map((item) => (
                   <Link
                     key={item.path}
                     to={item.path}
-                    className={`flex items-center space-x-3 px-4 py-3 rounded-md text-base font-medium transition-colors duration-200
+                    className={`flex items-center space-x-3 px-4 py-3 text-base font-medium transition-colors duration-200
                       ${location.pathname === item.path 
-                        ? 'bg-primary/10 text-primary' 
-                        : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700'
+                        ? 'bg-primary/10 text-primary border-r-4 border-primary' 
+                        : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800'
                       }`
                     }
                   >
@@ -236,7 +356,7 @@ export const Header: React.FC = () => {
                 ))}
                 {isAuthenticated && (
                   <button
-                    className="flex items-center space-x-3 w-full text-left px-4 py-3 rounded-md text-base font-medium text-error hover:bg-error/5 transition-colors duration-200"
+                    className="flex items-center space-x-3 w-full text-left px-4 py-3 text-base font-medium text-error hover:bg-error/5 transition-colors duration-200"
                     onClick={handleSignOut}
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
@@ -247,9 +367,9 @@ export const Header: React.FC = () => {
                 )}
               </div>
             </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
+          </>
+        )}
+      </AnimatePresence>
     </header>
   );
 };
