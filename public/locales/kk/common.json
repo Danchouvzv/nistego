@@ -1,0 +1,113 @@
+{
+  "app.name": "NIStego",
+  
+  "landing.hero.title": "Мақсаттарды жеңіске айналдыр",
+  "landing.hero.subtitle": "Ақылмен оқы. Қиналмай жетістікке жет.",
+  "landing.cta.start": "Бастау",
+  "landing.cta.demo": "Демо көру",
+  
+  "landing.benefits.title": "NIStego неге?",
+  "landing.benefits.time.title": "Уақыт үнемдеу",
+  "landing.benefits.time.description": "Бағаларды автоматты талдау және орташа баллды есептеу.",
+  "landing.benefits.grades.title": "Бағалардың өсуі",
+  "landing.benefits.grades.description": "Әлсіз жақтарды талдау және жақсарту бойынша ұсыныстар.",
+  "landing.benefits.gamification.title": "Геймификация",
+  "landing.benefits.gamification.description": "Мақсаттарға жетіп, марапаттар ал.",
+  
+  "landing.steps.title": "Бестікке жету жолы",
+  "landing.steps.step1": "Мақсат қой",
+  "landing.steps.step2": "Жоспар құр",
+  "landing.steps.step3": "Прогресті бақыла",
+  "landing.steps.step4": "Нәтижеге жет",
+  
+  "landing.faq.title": "Жиі қойылатын сұрақтар",
+  "landing.faq.q1": "NIStego бағаларды жақсартуға қалай көмектеседі?",
+  "landing.faq.a1": "NIStego сіздің ағымдағы бағаларыңызды талдайды, әлсіз жақтарды анықтайды және нәтижелерді жақсарту бойынша ұсыныстар береді.",
+  "landing.faq.q2": "NIStego қолдану үшін төлеу керек пе?",
+  "landing.faq.a2": "Жоқ, NIStego НИШ оқушылары үшін толығымен тегін.",
+  
+  "auth.login": "Кіру",
+  "auth.register": "Тіркелу",
+  "auth.googleLogin": "Google арқылы кіру",
+  "auth.emailLogin": "Email арқылы кіру",
+  
+  "dashboard.welcome": "Қош келдіңіз, {{name}}!",
+  "dashboard.stats.avgGrade": "Орташа балл",
+  "dashboard.stats.completedTasks": "Орындалған тапсырмалар",
+  "dashboard.stats.riskAlerts": "Ескертулер",
+  
+  "dashboard.subjects.title": "Пәндер",
+  "dashboard.subjects.progress": "Прогресс",
+  "dashboard.subjects.risk": "Қауіп",
+  
+  "dashboard.grades.title": "Соңғы бағалар",
+  "dashboard.grades.empty": "Бағалар жоқ. Бірінші бағаны қосыңыз!",
+  
+  "dashboard.tasks.title": "Алдағы тапсырмалар",
+  "dashboard.tasks.empty": "Тапсырмалар жоқ. Бірінші тапсырманы қосыңыз!",
+  
+  "dashboard.levelUp": "Құттықтаймыз! Сіз {{level}} деңгейіне жеттіңіз!",
+  
+  "subjects.title": "Пәндер",
+  "subjects.add": "Пән қосу",
+  
+  "subject.units": "Бөлімдер",
+  "subject.grades": "Бағалар",
+  "subject.goals": "Мақсаттар",
+  
+  "grades.sor": "БЖБ",
+  "grades.soc": "ТЖБ",
+  "grades.fa": "ҚБ",
+  "grades.upload": "Фото жүктеу",
+  
+  "goals.title": "Мақсаттар",
+  "goals.add": "Мақсат қосу",
+  "goals.edit": "Мақсатты өзгерту",
+  "goals.delete": "Мақсатты жою",
+  "goals.smartify": "AI көмегімен жақсарту",
+  
+  "planner.title": "Жоспарлағыш",
+  "planner.add": "Тапсырма қосу",
+  "planner.edit": "Тапсырманы өзгерту",
+  "planner.delete": "Тапсырманы жою",
+  "planner.complete": "Тапсырманы аяқтау",
+  
+  "upload.title": "Фото жүктеу",
+  "upload.select": "Файлды таңдаңыз",
+  "upload.drag": "Файлды осында сүйреңіз",
+  "upload.processing": "Өңдеу...",
+  "upload.success": "Сәтті жүктелді!",
+  "upload.error": "Жүктеу қатесі",
+  
+  "profile.title": "Профиль",
+  "profile.edit": "Профильді өзгерту",
+  "profile.level": "Деңгей: {{level}}",
+  "profile.xp": "XP: {{xp}}/{{nextLevel}}",
+  "profile.badges": "Жетістіктер",
+  
+  "settings.title": "Параметрлер",
+  "settings.language": "Тіл",
+  "settings.notifications": "Хабарландырулар",
+  "settings.theme": "Тақырып",
+  "settings.theme.light": "Жарық",
+  "settings.theme.dark": "Қараңғы",
+  "settings.theme.system": "Жүйелік",
+  
+  "common.save": "Сақтау",
+  "common.cancel": "Болдырмау",
+  "common.delete": "Жою",
+  "common.edit": "Өзгерту",
+  "common.add": "Қосу",
+  "common.search": "Іздеу",
+  "common.loading": "Жүктелуде...",
+  "common.error": "Қате",
+  "common.success": "Сәтті",
+  "common.yes": "Иә",
+  "common.no": "Жоқ",
+  "common.back": "Артқа",
+  "common.next": "Келесі",
+  "common.finish": "Аяқтау",
+  
+  "language.ru": "Русский",
+  "language.kk": "Қазақша"
+} 

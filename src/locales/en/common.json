@@ -1,0 +1,169 @@
+{
+  "subjects": {
+    "title": "Subjects",
+    "addNew": "Add Subject",
+    "search": "Search Subject",
+    "emptyState": "You don't have any subjects yet"
+  },
+  "planner": {
+    "title": "Planner",
+    "addTask": "Add Task",
+    "today": "Today",
+    "upcoming": "Upcoming",
+    "completed": "Completed",
+    "emptyState": "No tasks"
+  },
+  "goals": {
+    "title": "Goals",
+    "addNew": "Add Goal",
+    "progress": "Progress",
+    "emptyState": "You don't have any goals yet",
+    "deadline": "Deadline",
+    "smartify": "Make it SMART"
+  },
+  "auth": {
+    "login": "Login",
+    "register": "Register",
+    "email": "Email",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "forgotPassword": "Forgot password?",
+    "googleLogin": "Login with Google",
+    "googleRegister": "Register with Google",
+    "name": "Full Name",
+    "haveAccount": "Already have an account?",
+    "noAccount": "Don't have an account?",
+    "or": "or",
+    "loginSubtitle": "Sign in to your NIStego account",
+    "registerSubtitle": "Create your NIStego account",
+    "errors": {
+      "passwordsDoNotMatch": "Passwords do not match",
+      "passwordTooShort": "Password must be at least 6 characters",
+      "emailInUse": "This email is already in use",
+      "invalidEmail": "Invalid email address",
+      "weakPassword": "The password is too weak",
+      "userDisabled": "This account has been disabled",
+      "userNotFound": "No account found with this email",
+      "wrongPassword": "Incorrect password",
+      "googleSignIn": "Error signing in with Google. Please try again",
+      "default": "An error occurred. Please try again"
+    }
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "welcome": "Welcome,",
+    "quickActions": "Quick Actions",
+    "recentGrades": "Recent Grades",
+    "averageGrade": "Average Grade",
+    "upcomingTasks": "Upcoming Tasks",
+    "activeGoals": "Active Goals",
+    "subjects": {
+      "title": "Subjects",
+      "progress": "Progress"
+    },
+    "stats": {
+      "avgGrade": "Average Grade",
+      "completedTasks": "Completed Tasks",
+      "riskAlerts": "Risk Alerts"
+    }
+  },
+  "profile": {
+    "title": "Profile",
+    "editProfile": "Edit Profile",
+    "personalInfo": "Personal Information",
+    "settings": "Settings",
+    "achievements": "Achievements",
+    "badges": "Badges",
+    "statistics": "Statistics",
+    "level": "Level",
+    "nextLevel": "To next level",
+    "school": "School",
+    "grade": "Grade",
+    "logout": "Logout",
+    "overview": "Overview",
+    "subjects": "Subjects",
+    "activeGoals": "Active Goals"
+  },
+  "common": {
+    "loading": "Loading...",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "add": "Add",
+    "search": "Search",
+    "submit": "Submit",
+    "viewAll": "View All",
+    "theme": {
+      "light": "Light Theme",
+      "dark": "Dark Theme",
+      "system": "System"
+    },
+    "language": {
+      "title": "Language",
+      "ru": "Русский",
+      "kk": "Қазақша",
+      "en": "English"
+    },
+    "next": "Next",
+    "back": "Back"
+  },
+  "landing": {
+    "tagline": "Study smarter. Achieve more.",
+    "subtitle": "Transform goals into achievements",
+    "getStarted": "Get Started",
+    "benefits": {
+      "title": "Benefits",
+      "time": {
+        "title": "Save Time",
+        "description": "Effective time management with a smart planner"
+      },
+      "grades": {
+        "title": "Improve Grades",
+        "description": "Track progress and boost academic performance"
+      },
+      "gamification": {
+        "title": "Gamified Learning",
+        "description": "Earn achievements and increase motivation"
+      }
+    },
+    "steps": {
+      "title": "How It Works",
+      "step1": "Set Goal",
+      "step2": "Create Plan",
+      "step3": "Track Progress",
+      "step4": "Achieve Results"
+    },
+    "faq": {
+      "title": "Frequently Asked Questions",
+      "q1": "How does NIStego help improve studying?",
+      "a1": "NIStego helps structure your learning process, manage time, and track progress, leading to increased learning efficiency and improved results.",
+      "q2": "Can I use NIStego for exam preparation?",
+      "a2": "Yes, NIStego is perfect for exam preparation. You can create preparation plans, track studied topics, and see your progress."
+    },
+    "hero": {
+      "subtitle": "Smart educational platform for NIS students"
+    }
+  },
+  "footer": {
+    "links": "Links",
+    "about": "About",
+    "community": "Community",
+    "privacy": "Privacy",
+    "contact": "Contact",
+    "terms": "Terms of Service",
+    "rights": "All rights reserved"
+  },
+  "grades": {
+    "upload": "Upload Grades"
+  },
+  "app": {
+    "name": "NIStego"
+  },
+  "Password strength: Weak": "Password strength: Weak",
+  "Password strength: Good": "Password strength: Good",
+  "Password strength: Strong": "Password strength: Strong",
+  "Passwords match": "Passwords match",
+  "Passwords do not match": "Passwords do not match",
+  "Please fill in all fields": "Please fill in all fields"
+} 
