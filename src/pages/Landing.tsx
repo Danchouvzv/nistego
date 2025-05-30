@@ -1,20 +1,67 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { motion } from 'framer-motion';
+import { motion, useScroll, useTransform, useMotionValue, useSpring, AnimatePresence } from 'framer-motion';
 import Button from '../shared/ui/Button';
 
 const Landing: React.FC = () => {
   const { t } = useTranslation();
+  const [activeSection, setActiveSection] = useState<string>('hero');
+  const heroRef = useRef<HTMLDivElement>(null);
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const [cursorVariant, setCursorVariant] = useState("default");
+  const cursorX = useMotionValue(-100);
+  const cursorY = useMotionValue(-100);
+  const springConfig = { damping: 25, stiffness: 700 };
+  const cursorXSpring = useSpring(cursorX, springConfig);
+  const cursorYSpring = useSpring(cursorY, springConfig);
+
+  // Parallax scrolling effect
+  const { scrollYProgress } = useScroll();
+  const y = useTransform(scrollYProgress, [0, 1], [0, 300]);
+
+  // Mouse movement effect
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      const { clientX, clientY } = e;
+      setMousePosition({ x: clientX, y: clientY });
+      cursorX.set(clientX - 16);
+      cursorY.set(clientY - 16);
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    return () => window.removeEventListener("mousemove", handleMouseMove);
+  }, [cursorX, cursorY]);
+
+  // Intersection observer for section detection
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setActiveSection(entry.target.id);
+          }
+        });
+      },
+      { threshold: 0.5 }
+    );
+
+    document.querySelectorAll('section[id]').forEach((section) => {
+      observer.observe(section);
+    });
+
+    return () => observer.disconnect();
+  }, []);
 
   // Animation variants
   const fadeInUp = {
-    hidden: { opacity: 0, y: 20 },
+    hidden: { opacity: 0, y: 40 },
     visible: { 
       opacity: 1, 
       y: 0,
       transition: {
-        duration: 0.6
+        duration: 0.8,
+        ease: "easeOut"
       }
     }
   };
@@ -24,7 +71,103 @@ const Landing: React.FC = () => {
     visible: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.2
+        staggerChildren: 0.3
+      }
+    }
+  };
+
+  const heroImageVariants = {
+    hidden: { opacity: 0, scale: 0.8 },
+    visible: {
+      opacity: 1,
+      scale: 1,
+      transition: {
+        duration: 1,
+        ease: "easeOut",
+        delay: 0.2
+      }
+    }
+  };
+
+  const cursorVariants = {
+    default: {
+      width: 32,
+      height: 32,
+      backgroundColor: "rgba(255, 255, 255, 0.2)",
+      mixBlendMode: "difference"
+    },
+    button: {
+      width: 80,
+      height: 80,
+      backgroundColor: "rgba(255, 255, 255, 0.5)",
+      mixBlendMode: "difference"
+    },
+    text: {
+      width: 64,
+      height: 64,
+      backgroundColor: "rgba(255, 255, 255, 0.3)",
+      mixBlendMode: "difference"
+    }
+  };
+
+  const morphingPathVariants = {
+    animate: {
+      d: [
+        "M0,0 L100,0 L100,100 L0,100 Z",
+        "M0,0 L100,0 L90,100 L10,100 Z",
+        "M0,0 L100,0 L85,100 L15,100 Z",
+        "M0,0 L100,0 L80,100 L20,100 Z",
+        "M0,0 L100,0 L85,100 L15,100 Z",
+        "M0,0 L100,0 L90,100 L10,100 Z",
+        "M0,0 L100,0 L100,100 L0,100 Z",
+      ],
+      transition: {
+        duration: 20,
+        ease: "easeInOut",
+        repeat: Infinity,
+        repeatType: "reverse"
+      }
+    }
+  };
+
+  const floatingShapesVariants = {
+    shape1: {
+      y: [0, -30, 0],
+      x: [0, 20, 0],
+      rotate: [0, 10, 0],
+      transition: {
+        duration: 8,
+        repeat: Infinity,
+        ease: "easeInOut"
+      }
+    },
+    shape2: {
+      y: [0, 40, 0],
+      x: [0, -30, 0],
+      rotate: [0, -15, 0],
+      transition: {
+        duration: 10,
+        repeat: Infinity,
+        ease: "easeInOut"
+      }
+    },
+    shape3: {
+      y: [0, -25, 0],
+      x: [0, -20, 0],
+      rotate: [45, 60, 45],
+      transition: {
+        duration: 9,
+        repeat: Infinity,
+        ease: "easeInOut"
+      }
+    },
+    shape4: {
+      scale: [1, 1.2, 1],
+      y: [0, 15, 0],
+      transition: {
+        duration: 7,
+        repeat: Infinity,
+        ease: "easeInOut"
       }
     }
   };
@@ -41,83 +184,122 @@ const Landing: React.FC = () => {
     { key: 'q2', answer: 'a2' }
   ];
 
+  const handleMouseEnter = (variant: string) => {
+    setCursorVariant(variant);
+  };
+
+  const handleMouseLeave = () => {
+    setCursorVariant("default");
+  };
+
   return (
     <div className="overflow-hidden">
+      {/* Custom Cursor for Desktop */}
+      <div className="hidden md:block">
+        <motion.div
+          className="fixed top-0 left-0 w-8 h-8 rounded-full pointer-events-none z-50"
+          style={{
+            x: cursorXSpring,
+            y: cursorYSpring,
+          }}
+          variants={cursorVariants}
+          animate={cursorVariant}
+        />
+      </div>
+
       {/* Hero Section */}
-      <section className="relative min-h-screen bg-gradient-to-br from-primary to-secondary overflow-hidden">
+      <section 
+        id="hero" 
+        ref={heroRef}
+        className="relative min-h-screen bg-gradient-to-br from-primary to-secondary overflow-hidden"
+      >
         {/* Background Elements */}
         <div className="absolute inset-0 overflow-hidden">
           {/* Morphing Background SVG */}
           <svg className="absolute w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="heroGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="rgba(0, 200, 151, 0.8)">
+                  <animate attributeName="stop-color" 
+                    values="rgba(0, 200, 151, 0.8); rgba(0, 86, 199, 0.8); rgba(255, 86, 120, 0.8); rgba(0, 200, 151, 0.8)" 
+                    dur="20s" repeatCount="indefinite" />
+                </stop>
+                <stop offset="100%" stopColor="rgba(0, 86, 199, 0.8)">
+                  <animate attributeName="stop-color" 
+                    values="rgba(0, 86, 199, 0.8); rgba(255, 86, 120, 0.8); rgba(0, 200, 151, 0.8); rgba(0, 86, 199, 0.8)" 
+                    dur="20s" repeatCount="indefinite" />
+                </stop>
+              </linearGradient>
+              <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+                <feGaussianBlur stdDeviation="5" result="blur" />
+                <feComposite in="SourceGraphic" in2="blur" operator="over" />
+              </filter>
+            </defs>
             <motion.path
               d="M0,0 L100,0 L100,100 L0,100 Z"
               fill="url(#heroGradient)"
               initial={{ opacity: 0.7 }}
-              animate={{ 
-                opacity: 0.7,
-                d: [
-                  "M0,0 L100,0 L100,100 L0,100 Z",
-                  "M0,0 L100,0 L95,100 L5,100 Z",
-                  "M0,0 L100,0 L90,100 L10,100 Z",
-                  "M0,0 L100,0 L95,100 L5,100 Z",
-                  "M0,0 L100,0 L100,100 L0,100 Z"
-                ]
-              }}
-              transition={{ 
-                repeat: Infinity, 
-                duration: 20,
-                ease: "easeInOut" 
-              }}
+              variants={morphingPathVariants}
+              animate="animate"
             />
-            <defs>
-              <linearGradient id="heroGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="rgba(0, 200, 151, 0.8)" />
-                <stop offset="100%" stopColor="rgba(0, 86, 199, 0.8)" />
-              </linearGradient>
-            </defs>
           </svg>
           
           {/* Floating Elements */}
           <div className="absolute inset-0">
+            {/* Shape 1 - Floating circle with gradient */}
             <motion.div 
-              className="absolute top-1/4 left-1/5 w-16 h-16 sm:w-20 sm:h-20 bg-white/10 rounded-xl"
-              animate={{
-                y: [0, -20, 0],
-                rotate: [0, 10, 0],
-              }}
-              transition={{
-                duration: 6,
-                repeat: Infinity,
-                ease: "easeInOut"
-              }}
+              className="absolute top-1/4 left-1/5 w-20 h-20 sm:w-32 sm:h-32 rounded-full bg-gradient-to-r from-purple-500/30 to-pink-500/30 backdrop-blur-lg"
+              variants={floatingShapesVariants}
+              animate="shape1"
+              style={{ filter: "url(#glow)" }}
             />
             
+            {/* Shape 2 - Floating rounded rectangle */}
             <motion.div 
-              className="absolute bottom-1/4 right-1/5 w-24 h-24 sm:w-32 sm:h-32 bg-white/10 rounded-full"
-              animate={{
-                y: [0, 30, 0],
-                x: [0, -20, 0],
-              }}
-              transition={{
-                duration: 8,
-                repeat: Infinity,
-                ease: "easeInOut"
-              }}
+              className="absolute bottom-1/4 right-1/5 w-32 h-32 sm:w-48 sm:h-48 rounded-3xl bg-gradient-to-r from-blue-500/20 to-teal-500/20 backdrop-blur-lg rotate-12"
+              variants={floatingShapesVariants}
+              animate="shape2"
+              style={{ filter: "url(#glow)" }}
             />
             
+            {/* Shape 3 - Floating diamond */}
             <motion.div 
-              className="absolute top-1/2 right-1/3 w-12 h-12 sm:w-16 sm:h-16 bg-white/10 rounded-lg rotate-45"
-              animate={{
-                y: [0, -15, 0],
-                x: [0, 15, 0],
-                rotate: [45, 60, 45]
-              }}
-              transition={{
-                duration: 7,
-                repeat: Infinity,
-                ease: "easeInOut"
-              }}
+              className="absolute top-1/2 right-1/3 w-16 h-16 sm:w-24 sm:h-24 bg-gradient-to-r from-yellow-500/20 to-green-500/20 backdrop-blur-lg rotate-45"
+              variants={floatingShapesVariants}
+              animate="shape3"
+              style={{ filter: "url(#glow)" }}
             />
+            
+            {/* Shape 4 - Small floating circle */}
+            <motion.div 
+              className="absolute top-1/3 right-1/4 w-8 h-8 sm:w-12 sm:h-12 rounded-full bg-gradient-to-r from-red-500/30 to-orange-500/30 backdrop-blur-lg"
+              variants={floatingShapesVariants}
+              animate="shape4"
+              style={{ filter: "url(#glow)" }}
+            />
+          </div>
+          
+          {/* Particle Grid (Optional) */}
+          <div className="absolute inset-0 grid grid-cols-12 grid-rows-12 opacity-30">
+            {[...Array(144)].map((_, i) => (
+              <motion.div 
+                key={i} 
+                className="w-1 h-1 bg-white rounded-full" 
+                style={{ 
+                  left: `${(i % 12) * 8.33}%`, 
+                  top: `${Math.floor(i / 12) * 8.33}%` 
+                }}
+                animate={{
+                  opacity: [0.2, 0.8, 0.2],
+                  scale: [1, 1.5, 1],
+                }}
+                transition={{
+                  duration: Math.random() * 5 + 5,
+                  repeat: Infinity,
+                  delay: Math.random() * 5,
+                }}
+              />
+            ))}
           </div>
         </div>
 
@@ -127,19 +309,45 @@ const Landing: React.FC = () => {
             animate="visible"
             variants={staggerContainer}
             className="max-w-4xl mx-auto text-center"
+            onMouseEnter={() => handleMouseEnter("text")}
+            onMouseLeave={handleMouseLeave}
           >
             <motion.h1 
               variants={fadeInUp}
-              className="text-5xl sm:text-6xl md:text-7xl font-bold mb-6 text-white leading-tight"
+              className="text-5xl sm:text-6xl md:text-8xl font-bold mb-6 text-white leading-tight tracking-tight"
             >
-              <span className="inline-block bg-clip-text text-transparent bg-gradient-to-r from-white to-white/80">
-                {t('landing.tagline')}
+              <span className="inline-block relative overflow-hidden">
+                <motion.span 
+                  className="inline-block bg-clip-text text-transparent bg-gradient-to-r from-white to-white/80"
+                  animate={{ 
+                    backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"],
+                  }}
+                  transition={{ 
+                    duration: 10, 
+                    repeat: Infinity,
+                    ease: "easeInOut" 
+                  }}
+                >
+                  {t('landing.tagline')}
+                </motion.span>
+                <motion.span 
+                  className="absolute bottom-0 left-0 w-full h-[3px] bg-gradient-to-r from-white/0 via-white/80 to-white/0"
+                  animate={{ 
+                    left: ["-100%", "100%"],
+                  }}
+                  transition={{ 
+                    duration: 3, 
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                    repeatDelay: 3
+                  }}
+                />
               </span>
             </motion.h1>
             
             <motion.p 
               variants={fadeInUp}
-              className="text-xl md:text-2xl mb-12 text-white/90 max-w-2xl mx-auto"
+              className="text-xl md:text-2xl lg:text-3xl mb-12 text-white/90 max-w-2xl mx-auto font-light"
             >
               {t('landing.subtitle')}
             </motion.p>
@@ -148,25 +356,63 @@ const Landing: React.FC = () => {
               variants={fadeInUp}
               className="flex flex-col sm:flex-row justify-center gap-4 sm:gap-6"
             >
-              <Link to="/auth/register">
-                <Button 
-                  variant="light" 
-                  size="lg"
-                  className="shadow-lg shadow-primary/20 w-full sm:w-auto px-8 py-4 text-primary font-medium rounded-xl hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
-                >
-                  {t('landing.getStarted')}
-                </Button>
-              </Link>
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onMouseEnter={() => handleMouseEnter("button")}
+                onMouseLeave={handleMouseLeave}
+              >
+                <Link to="/auth/register">
+                  <Button 
+                    variant="light" 
+                    size="lg"
+                    className="shadow-[0_0_30px_rgba(0,200,151,0.5)] w-full sm:w-auto px-8 py-4 text-primary font-medium rounded-xl hover:shadow-[0_0_50px_rgba(0,200,151,0.8)] hover:-translate-y-1 transition-all duration-300"
+                  >
+                    <motion.span
+                      animate={{
+                        backgroundPosition: ["0% center", "100% center", "0% center"],
+                      }}
+                      transition={{
+                        duration: 8,
+                        repeat: Infinity,
+                        ease: "easeInOut",
+                      }}
+                      className="bg-gradient-to-r from-primary via-blue-500 to-primary bg-clip-text text-transparent bg-size-200"
+                    >
+                      {t('landing.getStarted')}
+                    </motion.span>
+                  </Button>
+                </Link>
+              </motion.div>
               
-              <Link to="#demo">
-                <Button 
-                  variant="outline" 
-                  size="lg"
-                  className="border-2 border-white/70 text-white hover:bg-white/10 w-full sm:w-auto px-8 py-4 font-medium rounded-xl transition-all duration-300 mt-4 sm:mt-0"
-                >
-                  {t('landing.watchDemo')}
-                </Button>
-              </Link>
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onMouseEnter={() => handleMouseEnter("button")}
+                onMouseLeave={handleMouseLeave}
+              >
+                <Link to="#demo">
+                  <Button 
+                    variant="outline" 
+                    size="lg"
+                    className="border-2 border-white/70 text-white backdrop-blur-sm hover:bg-white/10 w-full sm:w-auto px-8 py-4 font-medium rounded-xl transition-all duration-300 mt-4 sm:mt-0"
+                  >
+                    <motion.span
+                      initial={{ opacity: 0.8 }}
+                      animate={{
+                        opacity: [0.8, 1, 0.8],
+                      }}
+                      transition={{
+                        duration: 2,
+                        repeat: Infinity,
+                        ease: "easeInOut",
+                      }}
+                    >
+                      {t('landing.watchDemo')}
+                    </motion.span>
+                  </Button>
+                </Link>
+              </motion.div>
             </motion.div>
           </motion.div>
           
@@ -182,6 +428,8 @@ const Landing: React.FC = () => {
               duration: 2,
               ease: "easeInOut" 
             }}
+            onMouseEnter={() => handleMouseEnter("button")}
+            onMouseLeave={handleMouseLeave}
           >
             <svg 
               xmlns="http://www.w3.org/2000/svg" 
@@ -198,6 +446,62 @@ const Landing: React.FC = () => {
               />
             </svg>
           </motion.div>
+          
+          {/* 3D Device Mockup */}
+          <motion.div
+            className="absolute -bottom-[20%] left-1/2 transform -translate-x-1/2 w-[80vw] max-w-4xl hidden md:block"
+            variants={heroImageVariants}
+            initial="hidden"
+            animate="visible"
+            style={{ 
+              perspective: "1000px",
+              perspectiveOrigin: "center", 
+              y
+            }}
+          >
+            <motion.div
+              className="relative w-full h-full"
+              animate={{
+                rotateX: [5, 0, 5],
+                rotateY: [-5, 5, -5],
+                rotateZ: [0, 2, 0, -2, 0],
+              }}
+              transition={{
+                duration: 10,
+                repeat: Infinity,
+                ease: "easeInOut",
+              }}
+            >
+              <motion.img 
+                src="/images/mockup-dashboard.png" 
+                alt="NIStego Dashboard" 
+                className="w-full h-auto rounded-xl shadow-[0_10px_50px_rgba(0,0,0,0.5)] border border-white/20"
+                style={{ filter: "drop-shadow(0 25px 25px rgba(0,0,0,0.15))" }}
+              />
+            </motion.div>
+          </motion.div>
+        </div>
+        
+        {/* Scrolling Indicator */}
+        <div className="absolute bottom-6 left-0 right-0 flex justify-center items-center pointer-events-none">
+          <div className="flex space-x-1">
+            <motion.div 
+              className="w-8 h-1 rounded-full bg-white/30" 
+              animate={{ opacity: activeSection === 'hero' ? 1 : 0.3 }}
+            />
+            <motion.div 
+              className="w-8 h-1 rounded-full bg-white/30" 
+              animate={{ opacity: activeSection === 'benefits' ? 1 : 0.3 }}
+            />
+            <motion.div 
+              className="w-8 h-1 rounded-full bg-white/30" 
+              animate={{ opacity: activeSection === 'steps' ? 1 : 0.3 }}
+            />
+            <motion.div 
+              className="w-8 h-1 rounded-full bg-white/30" 
+              animate={{ opacity: activeSection === 'faq' ? 1 : 0.3 }}
+            />
+          </div>
         </div>
       </section>
 
