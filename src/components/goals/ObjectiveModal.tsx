@@ -94,8 +94,8 @@ const ObjectiveModal: React.FC = () => {
   
   const currentLesson = lessons[currentLessonIndex];
   const currentQuestion = questions[currentQuestionIndex];
-  const isCorrect = selectedAnswer === currentQuestion.correctOptionIndex;
-  const subjectColor = SUBJECTS[objective.subjectId]?.color || '#3B82F6';
+  const isCorrect = selectedAnswer === currentQuestion?.correctAnswer;
+  const subjectColor = objective && SUBJECTS[objective.subjectId]?.color || '#3B82F6';
   
   return (
     <AnimatePresence>
@@ -240,17 +240,17 @@ const ObjectiveModal: React.FC = () => {
                             Вопрос {currentQuestionIndex + 1} из {questions.length}
                           </h3>
                           <span className="text-xs text-gray-500 dark:text-gray-400">
-                            {Math.round((progress?.correctAnswers || 0) / 
-                              Math.max(1, (progress?.totalAnswers || 1)) * 100)}% правильных ответов
+                            {Math.round((progress?.successfulAttempts || 0) / 
+                              Math.max(1, (progress?.attempts || 1)) * 100)}% правильных ответов
                           </span>
                         </div>
                         
                         <p className="text-base text-gray-800 dark:text-gray-200 mb-4">
-                          {currentQuestion.text}
+                          {currentQuestion?.question}
                         </p>
                         
                         <div className="space-y-2 mb-4">
-                          {currentQuestion.options.map((option, index) => (
+                          {currentQuestion?.options && currentQuestion.options.map((option, index) => (
                             <button
                               key={index}
                               onClick={() => handleAnswerSelect(index)}
@@ -261,7 +261,8 @@ const ObjectiveModal: React.FC = () => {
                                       ? 'bg-green-100 border-green-400 dark:bg-green-900 dark:border-green-700'
                                       : 'bg-red-100 border-red-400 dark:bg-red-900 dark:border-red-700'
                                     : 'bg-blue-50 border-blue-400 dark:bg-blue-900 dark:border-blue-700'
-                                  : isAnswerSubmitted && index === currentQuestion.correctOptionIndex
+                                  : isAnswerSubmitted && typeof currentQuestion?.correctAnswer === 'string' && 
+                                    index === currentQuestion?.options?.indexOf(currentQuestion?.correctAnswer)
                                   ? 'bg-green-100 border-green-400 dark:bg-green-900 dark:border-green-700'
                                   : 'bg-white border-gray-300 dark:bg-gray-800 dark:border-gray-600'
                               } ${

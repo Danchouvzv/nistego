@@ -53,7 +53,7 @@ const convertDoc = <T extends DocumentData>(doc: QueryDocumentSnapshot<DocumentD
     updatedAt: data.updatedAt ? convertTimestamp(data.updatedAt) : new Date(),
     deadline: data.deadline ? convertTimestamp(data.deadline) : null,
     date: data.date ? convertTimestamp(data.date) : null,
-  } as T;
+  } as unknown as T;
 };
 
 // Функции для работы с целями

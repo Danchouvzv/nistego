@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import type { Task } from '../../types/planner';
 import { format } from 'date-fns';
+import { Timestamp } from 'firebase/firestore';
 
 interface TaskCardProps {
   task: Task;
@@ -67,9 +68,11 @@ const TaskCard: React.FC<TaskCardProps> = ({
         </div>
         
         <div className="mt-2 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
-          <span>
-            {format(task.dueDate, 'HH:mm')}
-          </span>
+          {task.dueDate && (
+            <span>
+              {format(task.dueDate instanceof Timestamp ? task.dueDate.toDate() : task.dueDate, 'HH:mm')}
+            </span>
+          )}
           <span>
             {task.estimatedEffort}m
           </span>

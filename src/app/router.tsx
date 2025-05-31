@@ -21,6 +21,7 @@ const Profile = lazy(() => import('../pages/Profile'));
 const Login = lazy(() => import('../pages/Login'));
 const Register = lazy(() => import('../pages/Register'));
 const UploadGrade = lazy(() => import('../pages/UploadGrade'));
+const Subscription = lazy(() => import('../pages/Subscription'));
 const NotFound = lazy(() => import('../pages/NotFound'));
 
 // Auth guard
@@ -119,6 +120,14 @@ export const router = createBrowserRouter([
             <AuthGuard>
               <UploadGrade />
             </AuthGuard>
+          </Suspense>
+        ),
+      },
+      {
+        path: 'subscription',
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <Subscription />
           </Suspense>
         ),
       },
