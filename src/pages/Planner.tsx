@@ -1,445 +1,274 @@
-import React, { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
-import { motion } from 'framer-motion';
-import { collection, getDocs, query, where } from 'firebase/firestore';
-import { db, auth } from '../shared/lib/firebase';
-import Card from '../shared/ui/Card';
-import Button from '../shared/ui/Button';
-
-interface Event {
-  id: string;
-  title: string;
-  description?: string;
-  date: Date;
-  startTime?: string;
-  endTime?: string;
-  subject?: string;
-  type: 'exam' | 'homework' | 'study' | 'other';
-}
+import React, { useEffect, useState } from 'react';
+import { motion, useMotionValue, useSpring } from 'framer-motion';
+import { format, addDays } from 'date-fns';
+import type { Task, Goal } from '../types/planner';
+import TaskCard from '../components/planner/TaskCard';
+import ProgressRing from '../components/planner/ProgressRing';
+import QuickAdd from '../components/planner/QuickAdd';
+import SmartInsightsDrawer from '../components/planner/SmartInsightsDrawer';
+import HeatmapLayer from '../components/planner/HeatmapLayer';
+import { GoalModal } from '../components/planner/GoalModal';
+import usePlannerStore from '../store/plannerStore';
 
 const Planner: React.FC = () => {
-  const { t } = useTranslation();
-  const [events, setEvents] = useState<Event[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [currentDate, setCurrentDate] = useState(new Date());
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [viewMode, setViewMode] = useState<'month' | 'week'>('month');
-  
+  // Cursor with tail effect
+  const cursorX = useMotionValue(0);
+  const cursorY = useMotionValue(0);
+  const springConfig = { damping: 25, stiffness: 700 };
+  const cursorXSpring = useSpring(cursorX, springConfig);
+  const cursorYSpring = useSpring(cursorY, springConfig);
+
+  // Get state and actions from store
+  const {
+    currentWeekStart,
+    viewMode,
+    weekPlan,
+    insights,
+    isQuickAddOpen,
+    isInsightsOpen,
+    setViewMode,
+    updateTask,
+    setQuickAddOpen,
+    setInsightsOpen,
+  } = usePlannerStore();
+
+  // Local state for selected goal
+  const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null);
+  const [isHeatmapVisible, setIsHeatmapVisible] = useState(false);
+
+  // Mock goals data (in production, this would come from the store)
+  const mockGoals: Goal[] = [
+    {
+      id: '1',
+      code: '10.3.2.1',
+      title: 'Understand Linear Equations',
+      progress: 75,
+      status: 'in_progress',
+      description: 'Master the concepts of linear equations and their applications',
+      subject: 'Mathematics',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
+    {
+      id: '2',
+      code: '10.4.1.2',
+      title: 'Chemical Bonding',
+      progress: 90,
+      status: 'in_progress',
+      description: 'Learn about different types of chemical bonds',
+      subject: 'Chemistry',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
+    // Add more mock goals as needed
+  ];
+
+  // Effect to track cursor
   useEffect(() => {
-    const fetchEvents = async () => {
-      try {
-        setLoading(true);
-        const userId = auth.currentUser?.uid;
-        
-        if (!userId) {
-          throw new Error('User not authenticated');
-        }
-        
-        // Get first and last day of current month
-        const year = currentDate.getFullYear();
-        const month = currentDate.getMonth();
-        const firstDay = new Date(year, month, 1);
-        const lastDay = new Date(year, month + 1, 0);
-        
-        // Fetch events for the current month
-        const eventsRef = collection(db, 'events');
-        const q = query(
-          eventsRef, 
-          where('userId', '==', userId),
-          where('date', '>=', firstDay),
-          where('date', '<=', lastDay)
-        );
-        
-        const eventsSnapshot = await getDocs(q);
-        
-        const eventsData = eventsSnapshot.docs.map(doc => {
-          const data = doc.data();
-          return {
-            id: doc.id,
-            title: data.title,
-            description: data.description,
-            date: data.date.toDate(),
-            startTime: data.startTime,
-            endTime: data.endTime,
-            subject: data.subject,
-            type: data.type,
-          };
-        });
-        
-        setEvents(eventsData);
-      } catch (err) {
-        console.error('Error fetching events:', err);
-      } finally {
-        setLoading(false);
-      }
+    const handleMouseMove = (e: MouseEvent) => {
+      cursorX.set(e.clientX);
+      cursorY.set(e.clientY);
     };
-    
-    fetchEvents();
-  }, [currentDate]);
-  
-  // Mock data for development until Firebase is set up
-  useEffect(() => {
-    if (process.env.NODE_ENV === 'development' && events.length === 0 && !loading) {
-      const today = new Date();
-      const year = today.getFullYear();
-      const month = today.getMonth();
-      
-      const mockEvents: Event[] = [
-        {
-          id: '1',
-          title: 'Math Exam',
-          description: 'Final exam for calculus',
-          date: new Date(year, month, 15),
-          startTime: '09:00',
-          endTime: '11:00',
-          subject: 'math',
-          type: 'exam',
-        },
-        {
-          id: '2',
-          title: 'Physics Homework',
-          description: 'Complete problems 1-10',
-          date: new Date(year, month, 10),
-          subject: 'physics',
-          type: 'homework',
-        },
-        {
-          id: '3',
-          title: 'Study Group',
-          description: 'Chemistry study group at library',
-          date: new Date(year, month, 8),
-          startTime: '16:00',
-          endTime: '18:00',
-          subject: 'chemistry',
-          type: 'study',
-        },
-        {
-          id: '4',
-          title: 'Language Quiz',
-          date: new Date(year, month, today.getDate()),
-          subject: 'languages',
-          type: 'exam',
-        },
-      ];
-      
-      setEvents(mockEvents);
-    }
-  }, [loading, events.length]);
-  
-  const getDaysInMonth = (year: number, month: number) => {
-    return new Date(year, month + 1, 0).getDate();
+
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, [cursorX, cursorY]);
+
+  // Generate week days
+  const weekDays = Array.from({ length: 7 }, (_, i) => 
+    addDays(currentWeekStart, i)
+  );
+
+  // Handle task status change
+  const handleTaskStatusChange = (taskId: string, status: Task['status']) => {
+    updateTask(taskId, { status });
   };
-  
-  const getFirstDayOfMonth = (year: number, month: number) => {
-    return new Date(year, month, 1).getDay();
+
+  // Calculate progress for ProgressRing
+  const calculateProgress = () => {
+    if (!weekPlan) return 0;
+    const totalTasks = weekPlan.tasks.length;
+    if (totalTasks === 0) return 0;
+    const completedTasks = weekPlan.tasks.filter(
+      task => task.status === 'completed'
+    ).length;
+    return (completedTasks / totalTasks) * 100;
   };
-  
-  const goToPreviousMonth = () => {
-    const newDate = new Date(currentDate);
-    newDate.setMonth(newDate.getMonth() - 1);
-    setCurrentDate(newDate);
+
+  // Handle quick add
+  const handleQuickAdd = (text: string) => {
+    // TODO: Implement task creation with Gemini NLP
+    console.log('Quick add:', text);
   };
-  
-  const goToNextMonth = () => {
-    const newDate = new Date(currentDate);
-    newDate.setMonth(newDate.getMonth() + 1);
-    setCurrentDate(newDate);
-  };
-  
-  const goToToday = () => {
-    setCurrentDate(new Date());
-    setSelectedDate(new Date());
-  };
-  
-  const getEventTypeColor = (type: string) => {
-    switch (type) {
-      case 'exam':
-        return 'bg-error/10 text-error border-error/20';
-      case 'homework':
-        return 'bg-warning/10 text-warning border-warning/20';
-      case 'study':
-        return 'bg-info/10 text-info border-info/20';
-      default:
-        return 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-700';
+
+  // Handle goal click in heatmap
+  const handleGoalClick = (goalId: string) => {
+    const goal = mockGoals.find(g => g.id === goalId);
+    if (goal) {
+      setSelectedGoal(goal);
     }
   };
-  
-  const renderCalendar = () => {
-    const year = currentDate.getFullYear();
-    const month = currentDate.getMonth();
-    const daysInMonth = getDaysInMonth(year, month);
-    const firstDayOfMonth = getFirstDayOfMonth(year, month);
-    
-    const today = new Date();
-    const isCurrentMonth = today.getMonth() === month && today.getFullYear() === year;
-    const todayDate = today.getDate();
-    
-    // Create array of days
-    const days = [];
-    
-    // Add empty cells for days before the first day of month
-    for (let i = 0; i < firstDayOfMonth; i++) {
-      days.push(null);
-    }
-    
-    // Add days of the month
-    for (let i = 1; i <= daysInMonth; i++) {
-      days.push(i);
-    }
-    
-    // Get events for each day
-    const eventsByDay: Record<number, Event[]> = {};
-    events.forEach(event => {
-      const day = event.date.getDate();
-      if (!eventsByDay[day]) {
-        eventsByDay[day] = [];
-      }
-      eventsByDay[day].push(event);
-    });
-    
-    return (
-      <div className="grid grid-cols-7 gap-1">
-        {/* Week day headers */}
-        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day, index) => (
-          <div key={`header-${index}`} className="py-2 text-center text-sm font-medium">
-            {t(`planner.weekdays.${day.toLowerCase()}`, day)}
-          </div>
-        ))}
-        
-        {/* Calendar days */}
-        {days.map((day, index) => {
-          if (day === null) {
-            return <div key={`empty-${index}`} className="h-24 bg-gray-50 dark:bg-gray-900/30 rounded-md"></div>;
-          }
-          
-          const isToday = isCurrentMonth && day === todayDate;
-          const isSelected = selectedDate && 
-                            selectedDate.getDate() === day && 
-                            selectedDate.getMonth() === month && 
-                            selectedDate.getFullYear() === year;
-          
-          const dayEvents = eventsByDay[day] || [];
-          
-          return (
-            <div 
-              key={`day-${day}`}
-              className={`h-24 p-1 border rounded-md overflow-hidden transition-colors ${
-                isToday 
-                  ? 'bg-primary/5 border-primary'
-                  : 'border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-900/30'
-              } ${
-                isSelected ? 'ring-2 ring-primary' : ''
-              }`}
-              onClick={() => setSelectedDate(new Date(year, month, day))}
-            >
-              <div className={`text-right mb-1 font-medium ${isToday ? 'text-primary' : ''}`}>
-                {day}
-              </div>
-              
-              <div className="overflow-y-auto h-[calc(100%-20px)] space-y-1">
-                {dayEvents.map(event => (
-                  <div 
-                    key={event.id}
-                    className={`px-1 py-0.5 text-xs truncate rounded border ${getEventTypeColor(event.type)}`}
-                  >
-                    {event.startTime && `${event.startTime} `}
-                    {event.title}
-                  </div>
-                ))}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    );
-  };
-  
-  const renderSelectedDateEvents = () => {
-    if (!selectedDate) return null;
-    
-    const dateEvents = events.filter(event => 
-      event.date.getDate() === selectedDate.getDate() &&
-      event.date.getMonth() === selectedDate.getMonth() &&
-      event.date.getFullYear() === selectedDate.getFullYear()
-    );
-    
-    if (dateEvents.length === 0) {
-      return (
-        <div className="text-gray-600 dark:text-gray-400 py-4 text-center">
-          {t('planner.noEvents', 'No events for this day')}
-        </div>
-      );
-    }
-    
-    // Sort events by start time
-    dateEvents.sort((a, b) => {
-      if (!a.startTime) return 1;
-      if (!b.startTime) return -1;
-      return a.startTime.localeCompare(b.startTime);
-    });
-    
-    return (
-      <div className="space-y-3">
-        {dateEvents.map(event => (
-          <div key={event.id} className="border rounded-md p-3">
-            <div className="flex justify-between items-start">
-              <div>
-                <h3 className="font-medium">{event.title}</h3>
-                {event.description && (
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                    {event.description}
-                  </p>
-                )}
-              </div>
-              <div className={`px-2 py-1 text-xs rounded ${getEventTypeColor(event.type)}`}>
-                {t(`planner.eventTypes.${event.type}`, event.type)}
-              </div>
-            </div>
-            
-            <div className="mt-2 flex flex-wrap gap-3 text-sm">
-              {event.startTime && (
-                <div className="flex items-center">
-                  <svg className="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  {event.startTime}{event.endTime ? ` - ${event.endTime}` : ''}
-                </div>
-              )}
-              
-              {event.subject && (
-                <div className="flex items-center">
-                  <svg className="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                  </svg>
-                  {event.subject}
-                </div>
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
-    );
-  };
-  
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-[calc(100vh-200px)]">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
-  
+
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="max-w-6xl mx-auto">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
-          <div>
-            <h1 className="text-3xl font-bold mb-2">
-              {t('planner.title', 'Study Planner')}
-            </h1>
-            <p className="text-gray-600 dark:text-gray-400">
-              {t('planner.subtitle', 'Plan and organize your study schedule')}
-            </p>
+    <div className="min-h-screen bg-gray-50 dark:bg-dark-900">
+      {/* Custom Cursor */}
+      <motion.div
+        className="fixed top-0 left-0 w-4 h-4 pointer-events-none z-50"
+        style={{
+          x: cursorXSpring,
+          y: cursorYSpring,
+          backgroundColor: '#0056C7',
+          borderRadius: '50%',
+          mixBlendMode: 'difference',
+        }}
+      />
+
+      {/* Top Bar */}
+      <header className="fixed top-0 left-0 right-0 h-16 bg-white dark:bg-dark-800 shadow-sm z-40 px-4">
+        <div className="flex items-center justify-between h-full max-w-7xl mx-auto">
+          <div className="flex items-center space-x-4">
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Planner</h1>
+            <nav className="hidden md:flex space-x-2">
+              {/* View Switcher */}
+              <button
+                className={`px-3 py-1.5 rounded-lg transition-colors ${
+                  viewMode === 'calendar'
+                    ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300'
+                    : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-dark-700'
+                }`}
+                onClick={() => setViewMode('calendar')}
+              >
+                Calendar
+              </button>
+              {/* Add other view modes here */}
+            </nav>
           </div>
-          
-          <div className="flex gap-2 mt-4 md:mt-0">
-            <Button
-              variant="primary"
-              disabled={true} // Feature to be implemented
+
+          <div className="flex items-center space-x-4">
+            {/* Progress Ring */}
+            <div className="hidden md:block">
+              <ProgressRing progress={calculateProgress()} />
+            </div>
+
+            {/* Streak Bar */}
+            <div className="hidden md:flex items-center space-x-2">
+              <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                Streak:
+              </span>
+              <span className="text-lg font-bold text-blue-600 dark:text-blue-400">
+                {weekPlan?.meta.streak || 0}
+              </span>
+            </div>
+
+            {/* Date Picker */}
+            <button className="px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-dark-700 text-gray-700 dark:text-gray-300">
+              {format(currentWeekStart, 'MMM d, yyyy')}
+            </button>
+
+            {/* Smart Insights Toggle */}
+            <button
+              onClick={() => setInsightsOpen(true)}
+              className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-700
+                       text-gray-600 dark:text-gray-400"
             >
-              {t('planner.addEvent', 'Add Event')}
-            </Button>
+              <span className="sr-only">Open Smart Insights</span>
+              📊
+            </button>
           </div>
         </div>
-        
-        <div className="flex flex-col lg:flex-row gap-6">
-          <div className="lg:w-3/4">
-            <Card>
-              <Card.Body className="p-4">
-                <div className="flex justify-between items-center mb-4">
-                  <div className="flex items-center gap-2">
-                    <h2 className="text-xl font-semibold">
-                      {currentDate.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}
-                    </h2>
-                    <button 
-                      className="text-sm text-primary underline"
-                      onClick={goToToday}
-                    >
-                      {t('planner.today', 'Today')}
-                    </button>
-                  </div>
+      </header>
+
+      {/* Main Content */}
+      <main className="pt-20 pb-16 px-4">
+        <div className="max-w-7xl mx-auto">
+          {/* Controls */}
+          <div className="flex justify-end mb-4">
+            <button
+              onClick={() => setIsHeatmapVisible(!isHeatmapVisible)}
+              className={`px-3 py-1.5 rounded-lg transition-colors ${
+                isHeatmapVisible
+                  ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300'
+                  : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-dark-700'
+              }`}
+            >
+              {isHeatmapVisible ? 'Hide' : 'Show'} Heatmap
+            </button>
+          </div>
+
+          {/* Week Grid with Heatmap Layer */}
+          <div className="relative">
+            {/* Base Week Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-7 gap-4">
+              {weekDays.map(day => (
+                <div
+                  key={format(day, 'yyyy-MM-dd')}
+                  className="bg-white dark:bg-dark-800 rounded-2xl shadow-lg p-4 min-h-[200px]"
+                >
+                  <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                    {format(day, 'EEEE')}
+                  </h3>
+                  <p className="text-lg font-bold text-gray-900 dark:text-white">
+                    {format(day, 'd')}
+                  </p>
                   
-                  <div className="flex gap-2">
-                    <button 
-                      className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800"
-                      onClick={goToPreviousMonth}
-                    >
-                      <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"></path>
-                      </svg>
-                    </button>
-                    <button 
-                      className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800"
-                      onClick={goToNextMonth}
-                    >
-                      <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path>
-                      </svg>
-                    </button>
+                  {/* Task Cards */}
+                  <div className="mt-4 space-y-2">
+                    {weekPlan?.tasks
+                      .filter(task => format(task.dueDate, 'yyyy-MM-dd') === format(day, 'yyyy-MM-dd'))
+                      .sort((a, b) => a.position - b.position)
+                      .map(task => (
+                        <TaskCard
+                          key={task.id}
+                          task={task}
+                          subjectColor="#0056C7" // TODO: Get from subject
+                          onStatusChange={handleTaskStatusChange}
+                        />
+                      ))}
                   </div>
                 </div>
-                
-                {renderCalendar()}
-              </Card.Body>
-            </Card>
-          </div>
-          
-          <div className="lg:w-1/4">
-            <Card className="sticky top-24">
-              <Card.Body className="p-4">
-                <h2 className="text-lg font-semibold mb-4">
-                  {selectedDate 
-                    ? selectedDate.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' }) 
-                    : t('planner.selectDate', 'Select a date')}
-                </h2>
-                
-                {selectedDate ? (
-                  renderSelectedDateEvents()
-                ) : (
-                  <div className="text-gray-600 dark:text-gray-400 py-4 text-center">
-                    {t('planner.clickToViewEvents', 'Click on a day to view events')}
-                  </div>
-                )}
-              </Card.Body>
-            </Card>
+              ))}
+            </div>
+
+            {/* Heatmap Layer */}
+            <HeatmapLayer
+              goals={mockGoals}
+              isVisible={isHeatmapVisible}
+              onGoalClick={handleGoalClick}
+            />
           </div>
         </div>
-        
-        <div className="mt-6">
-          <h2 className="text-xl font-semibold mb-4">
-            {t('planner.legend', 'Legend')}
-          </h2>
-          
-          <div className="flex flex-wrap gap-4">
-            <div className="flex items-center">
-              <div className={`w-4 h-4 rounded mr-2 ${getEventTypeColor('exam')}`}></div>
-              <span>{t('planner.eventTypes.exam', 'Exam')}</span>
-            </div>
-            <div className="flex items-center">
-              <div className={`w-4 h-4 rounded mr-2 ${getEventTypeColor('homework')}`}></div>
-              <span>{t('planner.eventTypes.homework', 'Homework')}</span>
-            </div>
-            <div className="flex items-center">
-              <div className={`w-4 h-4 rounded mr-2 ${getEventTypeColor('study')}`}></div>
-              <span>{t('planner.eventTypes.study', 'Study')}</span>
-            </div>
-            <div className="flex items-center">
-              <div className={`w-4 h-4 rounded mr-2 ${getEventTypeColor('other')}`}></div>
-              <span>{t('planner.eventTypes.other', 'Other')}</span>
-            </div>
-          </div>
-        </div>
-      </div>
+      </main>
+
+      {/* Quick Add Button (Mobile) */}
+      <button
+        onClick={() => setQuickAddOpen(true)}
+        className="fixed right-4 bottom-4 md:hidden w-14 h-14 bg-blue-600 text-white 
+                 rounded-full shadow-lg flex items-center justify-center"
+      >
+        <span className="text-2xl">+</span>
+      </button>
+
+      {/* Quick Add Modal */}
+      <QuickAdd
+        isOpen={isQuickAddOpen}
+        onClose={() => setQuickAddOpen(false)}
+        onAdd={handleQuickAdd}
+      />
+
+      {/* Smart Insights Drawer */}
+      <SmartInsightsDrawer
+        isOpen={isInsightsOpen}
+        onClose={() => setInsightsOpen(false)}
+        insights={insights}
+        studyHours={weekPlan?.meta.totalStudyHours || 0}
+        totalHours={24 * 7} // Total hours in a week
+      />
+
+      {/* Goal Modal */}
+      <GoalModal
+        goal={selectedGoal}
+        onClose={() => setSelectedGoal(null)}
+      />
     </div>
   );
 };
