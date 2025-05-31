@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { motion, useMotionValue, useSpring } from 'framer-motion';
+import { motion, useMotionValue, useSpring, AnimatePresence } from 'framer-motion';
 import { format, addDays } from 'date-fns';
 import type { Task, Goal } from '../types/planner';
 import TaskCard from '../components/planner/TaskCard';
@@ -9,6 +9,8 @@ import SmartInsightsDrawer from '../components/planner/SmartInsightsDrawer';
 import HeatmapLayer from '../components/planner/HeatmapLayer';
 import { GoalModal } from '../components/planner/GoalModal';
 import usePlannerStore from '../store/plannerStore';
+import { parseAndCreateTask } from '../services/taskParser';
+import { Timestamp } from 'firebase/firestore';
 
 const Planner: React.FC = () => {
   // Cursor with tail effect
@@ -30,11 +32,13 @@ const Planner: React.FC = () => {
     updateTask,
     setQuickAddOpen,
     setInsightsOpen,
+    addTask
   } = usePlannerStore();
 
   // Local state for selected goal
   const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null);
   const [isHeatmapVisible, setIsHeatmapVisible] = useState(false);
+  const [notification, setNotification] = useState<{message: string, type: 'success' | 'error'} | null>(null);
 
   // Mock goals data (in production, this would come from the store)
   const mockGoals: Goal[] = [
@@ -74,6 +78,16 @@ const Planner: React.FC = () => {
     return () => window.removeEventListener('mousemove', handleMouseMove);
   }, [cursorX, cursorY]);
 
+  // Effect to clear notification after 3 seconds
+  useEffect(() => {
+    if (notification) {
+      const timer = setTimeout(() => {
+        setNotification(null);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [notification]);
+
   // Generate week days
   const weekDays = Array.from({ length: 7 }, (_, i) => 
     addDays(currentWeekStart, i)
@@ -82,6 +96,10 @@ const Planner: React.FC = () => {
   // Handle task status change
   const handleTaskStatusChange = (taskId: string, status: Task['status']) => {
     updateTask(taskId, { status });
+    setNotification({
+      message: status === 'completed' ? 'Task completed! 🎉' : 'Task status updated',
+      type: 'success'
+    });
   };
 
   // Calculate progress for ProgressRing
@@ -96,9 +114,28 @@ const Planner: React.FC = () => {
   };
 
   // Handle quick add
-  const handleQuickAdd = (text: string) => {
-    // TODO: Implement task creation with Gemini NLP
-    console.log('Quick add:', text);
+  const handleQuickAdd = async (text: string) => {
+    try {
+      const task = await parseAndCreateTask(text);
+      if (task) {
+        addTask(task);
+        setNotification({
+          message: 'Task added successfully! 📝',
+          type: 'success'
+        });
+      } else {
+        setNotification({
+          message: 'Could not parse task. Please try again.',
+          type: 'error'
+        });
+      }
+    } catch (error) {
+      console.error('Error adding task:', error);
+      setNotification({
+        message: 'Error adding task. Please try again.',
+        type: 'error'
+      });
+    }
   };
 
   // Handle goal click in heatmap
@@ -107,6 +144,24 @@ const Planner: React.FC = () => {
     if (goal) {
       setSelectedGoal(goal);
     }
+  };
+
+  // Get tasks for a specific day
+  const getTasksForDay = (date: Date) => {
+    if (!weekPlan) return [];
+    return weekPlan.tasks.filter(task => {
+      // Handle both Date and Timestamp types
+      let taskDate: Date;
+      if (task.dueDate instanceof Date) {
+        taskDate = task.dueDate;
+      } else if (task.dueDate instanceof Timestamp) {
+        taskDate = task.dueDate.toDate();
+      } else {
+        // Fallback for unexpected type
+        return false;
+      }
+      return format(taskDate, 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd');
+    }).sort((a, b) => a.position - b.position);
   };
 
   return (
@@ -122,6 +177,24 @@ const Planner: React.FC = () => {
           mixBlendMode: 'difference',
         }}
       />
+
+      {/* Notification */}
+      <AnimatePresence>
+        {notification && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className={`fixed top-20 right-4 z-50 px-4 py-2 rounded-lg shadow-lg ${
+              notification.type === 'success' 
+                ? 'bg-green-500 text-white' 
+                : 'bg-red-500 text-white'
+            }`}
+          >
+            {notification.message}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Top Bar */}
       <header className="fixed top-0 left-0 right-0 h-16 bg-white dark:bg-dark-800 shadow-sm z-40 px-4">
@@ -156,7 +229,7 @@ const Planner: React.FC = () => {
                 Streak:
               </span>
               <span className="text-lg font-bold text-blue-600 dark:text-blue-400">
-                {weekPlan?.meta.streak || 0}
+                {weekPlan?.meta?.streak || 0}
               </span>
             </div>
 
@@ -182,7 +255,15 @@ const Planner: React.FC = () => {
       <main className="pt-20 pb-16 px-4">
         <div className="max-w-7xl mx-auto">
           {/* Controls */}
-          <div className="flex justify-end mb-4">
+          <div className="flex justify-between mb-4">
+            <button
+              onClick={() => setQuickAddOpen(true)}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 
+                       transition-colors flex items-center space-x-2"
+            >
+              <span>+ Add Task</span>
+            </button>
+            
             <button
               onClick={() => setIsHeatmapVisible(!isHeatmapVisible)}
               className={`px-3 py-1.5 rounded-lg transition-colors ${
@@ -213,17 +294,20 @@ const Planner: React.FC = () => {
                   
                   {/* Task Cards */}
                   <div className="mt-4 space-y-2">
-                    {weekPlan?.tasks
-                      .filter(task => format(task.dueDate, 'yyyy-MM-dd') === format(day, 'yyyy-MM-dd'))
-                      .sort((a, b) => a.position - b.position)
-                      .map(task => (
-                        <TaskCard
-                          key={task.id}
-                          task={task}
-                          subjectColor="#0056C7" // TODO: Get from subject
-                          onStatusChange={handleTaskStatusChange}
-                        />
-                      ))}
+                    {getTasksForDay(day).map(task => (
+                      <TaskCard
+                        key={task.id}
+                        task={task}
+                        subjectColor={task.subjectId === 'math' ? '#0056C7' : '#7209B7'} // TODO: Get from subject
+                        onStatusChange={handleTaskStatusChange}
+                      />
+                    ))}
+                    
+                    {getTasksForDay(day).length === 0 && (
+                      <div className="py-8 text-center text-gray-400 dark:text-gray-600 text-sm">
+                        No tasks for this day
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
@@ -260,7 +344,7 @@ const Planner: React.FC = () => {
         isOpen={isInsightsOpen}
         onClose={() => setInsightsOpen(false)}
         insights={insights}
-        studyHours={weekPlan?.meta.totalStudyHours || 0}
+        studyHours={weekPlan?.meta?.totalStudyHours || 0}
         totalHours={24 * 7} // Total hours in a week
       />
 
