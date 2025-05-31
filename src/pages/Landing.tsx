@@ -156,7 +156,10 @@ const Landing: React.FC = () => {
   };
 
   const morphingPathVariants: Variants = {
-    initial: { opacity: 0.7 },
+    initial: { 
+      opacity: 0.7,
+      d: "M0,0 L100,0 L100,100 L0,100 Z"
+    },
     animate: { 
       opacity: 0.7,
       d: [
@@ -227,8 +230,96 @@ const Landing: React.FC = () => {
   ];
 
   const faqs = [
-    { key: 'q1', answer: 'a1' },
-    { key: 'q2', answer: 'a2' }
+    { 
+      key: 'q1', 
+      question: 'landing.faq.q1',
+      answer: 'landing.faq.a1',
+      icon: '🚀'
+    },
+    { 
+      key: 'q2', 
+      question: 'landing.faq.q2',
+      answer: 'landing.faq.a2',
+      icon: '📝'
+    },
+    { 
+      key: 'q3', 
+      question: 'landing.faq.q3',
+      answer: 'landing.faq.a3',
+      icon: '🎯'
+    },
+    { 
+      key: 'q4', 
+      question: 'landing.faq.q4',
+      answer: 'landing.faq.a4',
+      icon: '🤖'
+    },
+    { 
+      key: 'q5', 
+      question: 'landing.faq.q5',
+      answer: 'landing.faq.a5',
+      icon: '📊'
+    },
+    { 
+      key: 'q6', 
+      question: 'landing.faq.q6',
+      answer: 'landing.faq.a6',
+      icon: '🔥'
+    },
+    { 
+      key: 'q7', 
+      question: 'landing.faq.q7',
+      answer: 'landing.faq.a7',
+      icon: '👨‍🏫'
+    },
+    { 
+      key: 'q8', 
+      question: 'landing.faq.q8',
+      answer: 'landing.faq.a8',
+      icon: '📈'
+    },
+    { 
+      key: 'q9', 
+      question: 'landing.faq.q9',
+      answer: 'landing.faq.a9',
+      icon: '❓'
+    },
+    { 
+      key: 'q10', 
+      question: 'landing.faq.q10',
+      answer: 'landing.faq.a10',
+      icon: '🌐'
+    },
+    { 
+      key: 'q11', 
+      question: 'landing.faq.q11',
+      answer: 'landing.faq.a11',
+      icon: '📱'
+    },
+    { 
+      key: 'q12', 
+      question: 'landing.faq.q12',
+      answer: 'landing.faq.a12',
+      icon: '🏆'
+    },
+    { 
+      key: 'q13', 
+      question: 'landing.faq.q13',
+      answer: 'landing.faq.a13',
+      icon: '🔒'
+    },
+    { 
+      key: 'q14', 
+      question: 'landing.faq.q14',
+      answer: 'landing.faq.a14',
+      icon: '🏫'
+    },
+    { 
+      key: 'q15', 
+      question: 'landing.faq.q15',
+      answer: 'landing.faq.a15',
+      icon: '🎓'
+    }
   ];
 
   const handleMouseEnter = () => {
@@ -239,6 +330,61 @@ const Landing: React.FC = () => {
   const handleMouseLeave = () => {
     setIsHovering(false);
     cursorSize.set(10);
+  };
+
+  const FaqItem = ({ faq, index }: { faq: typeof faqs[0], index: number }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    
+    const toggleAccordion = () => {
+      setIsOpen(!isOpen);
+    };
+    
+    return (
+      <motion.div
+        variants={fadeInUp}
+        custom={index}
+        className="mb-6 bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden border border-gray-100 dark:border-gray-700"
+      >
+        <button
+          onClick={toggleAccordion}
+          className="w-full px-6 py-5 text-left flex items-center justify-between focus:outline-none group"
+        >
+          <div className="flex items-center">
+            <span className="text-2xl mr-4">{faq.icon}</span>
+            <h3 className="text-lg font-bold text-gray-800 dark:text-white group-hover:text-primary transition-colors duration-200">
+              {t(faq.question)}
+            </h3>
+          </div>
+          <motion.div
+            animate={{ rotate: isOpen ? 180 : 0 }}
+            transition={{ duration: 0.3 }}
+            className="text-gray-400 dark:text-gray-500"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+          </motion.div>
+        </button>
+        
+        <AnimatePresence>
+          {isOpen && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              className="overflow-hidden"
+            >
+              <div className="px-6 pb-5 pt-0 text-gray-600 dark:text-gray-300">
+                <div className="border-t border-gray-100 dark:border-gray-700 pt-4 mt-1">
+                  {t(faq.answer)}
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.div>
+    );
   };
 
   return (
@@ -737,14 +883,14 @@ const Landing: React.FC = () => {
       </section>
 
       {/* FAQ Section */}
-      <section className="bg-white dark:bg-gray-900 py-24">
+      <section className="bg-gray-50 dark:bg-gray-900 py-24">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true, amount: 0.2 }}
             variants={staggerContainer}
-            className="max-w-3xl mx-auto text-center mb-16"
+            className="max-w-4xl mx-auto text-center mb-16"
           >
             <motion.h2 
               variants={fadeInUp}
@@ -752,6 +898,12 @@ const Landing: React.FC = () => {
             >
               {t('landing.faq.title')}
             </motion.h2>
+            <motion.p
+              variants={fadeInUp}
+              className="text-lg text-gray-600 dark:text-gray-400 max-w-3xl mx-auto"
+            >
+              {t('landing.faq.subtitle')}
+            </motion.p>
           </motion.div>
           
           <motion.div
@@ -761,20 +913,11 @@ const Landing: React.FC = () => {
             variants={staggerContainer}
             className="max-w-3xl mx-auto"
           >
-            {faqs.map((faq) => (
-              <motion.div
-                key={faq.key}
-                variants={fadeInUp}
-                className="mb-8 bg-gray-50 dark:bg-gray-800 rounded-xl p-6 shadow-md"
-              >
-                <h3 className="text-xl font-bold mb-4">
-                  {t(`landing.faq.${faq.key}`)}
-                </h3>
-                <p className="text-gray-600 dark:text-gray-400">
-                  {t(`landing.faq.${faq.answer}`)}
-                </p>
-              </motion.div>
-            ))}
+            <div className="grid grid-cols-1 gap-4">
+              {faqs.map((faq, index) => (
+                <FaqItem key={faq.key} faq={faq} index={index} />
+              ))}
+            </div>
           </motion.div>
           
           <motion.div
@@ -782,7 +925,7 @@ const Landing: React.FC = () => {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.4 }}
-            className="text-center mt-10"
+            className="text-center mt-16"
           >
             <Link to="/auth/register">
               <Button 
