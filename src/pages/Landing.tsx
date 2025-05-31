@@ -340,11 +340,7 @@ const Landing: React.FC = () => {
     };
     
     return (
-      <motion.div
-        variants={fadeInUp}
-        custom={index}
-        className="mb-6 bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden border border-gray-100 dark:border-gray-700"
-      >
+      <div className="mb-6 bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden border border-gray-100 dark:border-gray-700">
         <button
           onClick={toggleAccordion}
           className="w-full px-6 py-5 text-left flex items-center justify-between focus:outline-none group"
@@ -355,35 +351,21 @@ const Landing: React.FC = () => {
               {t(faq.question)}
             </h3>
           </div>
-          <motion.div
-            animate={{ rotate: isOpen ? 180 : 0 }}
-            transition={{ duration: 0.3 }}
-            className="text-gray-400 dark:text-gray-500"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <div className="text-gray-400 dark:text-gray-500">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.3s ease' }}>
               <polyline points="6 9 12 15 18 9"></polyline>
             </svg>
-          </motion.div>
+          </div>
         </button>
         
-        <AnimatePresence>
-          {isOpen && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: "auto", opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.3 }}
-              className="overflow-hidden"
-            >
-              <div className="px-6 pb-5 pt-0 text-gray-600 dark:text-gray-300">
-                <div className="border-t border-gray-100 dark:border-gray-700 pt-4 mt-1">
-                  {t(faq.answer)}
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </motion.div>
+        {isOpen && (
+          <div className="px-6 pb-5 pt-0 text-gray-600 dark:text-gray-300">
+            <div className="border-t border-gray-100 dark:border-gray-700 pt-4 mt-1">
+              {t(faq.answer)}
+            </div>
+          </div>
+        )}
+      </div>
     );
   };
 
@@ -883,7 +865,7 @@ const Landing: React.FC = () => {
       </section>
 
       {/* FAQ Section */}
-      <section className="bg-gray-50 dark:bg-gray-900 py-24">
+      <section className="bg-gray-50 dark:bg-gray-900 py-24" id="faq">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
             initial="hidden"
@@ -906,19 +888,13 @@ const Landing: React.FC = () => {
             </motion.p>
           </motion.div>
           
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, amount: 0.1 }}
-            variants={staggerContainer}
-            className="max-w-3xl mx-auto"
-          >
+          <div className="max-w-3xl mx-auto">
             <div className="grid grid-cols-1 gap-4">
               {faqs.map((faq, index) => (
                 <FaqItem key={faq.key} faq={faq} index={index} />
               ))}
             </div>
-          </motion.div>
+          </div>
           
           <motion.div
             initial={{ opacity: 0, y: 20 }}
