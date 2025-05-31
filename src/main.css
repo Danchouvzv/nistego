@@ -287,4 +287,49 @@ textarea {
   .pulse {
     @apply animate-pulse;
   }
+}
+
+/* Добавляем шрифт Playfair Display */
+.font-playfair {
+  font-family: 'Playfair Display', serif;
+}
+
+/* Градиентный текст */
+.gradient-text {
+  @apply bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary;
+}
+
+/* Размеры фона для градиентов */
+.bg-size-200 {
+  background-size: 200% 200%;
+}
+
+/* Дополнительные стили для темной темы */
+.dark .gradient-text {
+  @apply bg-clip-text text-transparent bg-gradient-to-r from-primary/90 to-secondary/90;
+}
+
+/* Стили для мобильных устройств */
+@media (max-width: 640px) {
+  /* Мобильные стили */
+}
+
+/* Стили для планшетов */
+@media (min-width: 641px) and (max-width: 1024px) {
+  /* Стили для планшетов */
+}
+
+/* Стили для десктопов */
+@media (min-width: 1025px) {
+  /* Стили для десктопов */
+}
+
+/* Стили для больших экранов */
+@media (min-width: 1280px) {
+  /* Стили для больших экранов */
+}
+
+/* Стили для очень больших экранов */
+@media (min-width: 1536px) {
+  /* Стили для очень больших экранов */
 } 

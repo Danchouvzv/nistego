@@ -5,6 +5,7 @@ import { motion, useScroll, useTransform, useMotionValue, useSpring, AnimatePres
 import type { Variants } from 'framer-motion';
 import Button from '../shared/ui/Button';
 import { useMediaQuery } from 'react-responsive';
+import '@fontsource/playfair-display';
 
 const MAX_TRAIL_POINTS = 20;
 
@@ -125,10 +126,10 @@ const Landing: React.FC = () => {
 
   const cursorVariants: Variants = {
     default: {
-      height: 10,
-      width: 10,
+      height: 20,
+      width: 20,
       borderRadius: "50%",
-      backgroundColor: "rgba(0, 200, 151, 0.4)",
+      backgroundColor: "rgba(0, 200, 151, 0.6)",
       mixBlendMode: "difference" as const,
       filter: "blur(1px)",
       boxShadow: "0 0 5px 1px rgba(0, 200, 151, 0.6)",
@@ -136,18 +137,18 @@ const Landing: React.FC = () => {
       y: 0
     },
     hover: {
-      height: 30,
-      width: 30,
-      backgroundColor: "rgba(0, 200, 151, 0.6)",
+      height: 40,
+      width: 40,
+      backgroundColor: "rgba(0, 200, 151, 0.8)",
       filter: "blur(2px)",
       boxShadow: "0 0 10px 2px rgba(0, 200, 151, 0.8)",
       x: 0,
       y: 0
     },
     click: {
-      height: 8,
-      width: 8,
-      backgroundColor: "rgba(0, 86, 199, 0.7)",
+      height: 15,
+      width: 15,
+      backgroundColor: "rgba(0, 86, 199, 0.8)",
       filter: "blur(0px)",
       boxShadow: "0 0 15px 3px rgba(0, 86, 199, 0.9)",
       x: 0,
@@ -334,38 +335,81 @@ const Landing: React.FC = () => {
 
   const FaqItem = ({ faq, index }: { faq: typeof faqs[0], index: number }) => {
     const [isOpen, setIsOpen] = useState(false);
+    const controls = useAnimation();
     
     const toggleAccordion = () => {
       setIsOpen(!isOpen);
+      if (!isOpen) {
+        controls.start({
+          height: "auto",
+          opacity: 1,
+          transition: { duration: 0.3, ease: "easeOut" }
+        });
+      } else {
+        controls.start({
+          height: 0,
+          opacity: 0,
+          transition: { duration: 0.3, ease: "easeIn" }
+        });
+      }
     };
     
+    useEffect(() => {
+      if (isOpen) {
+        controls.start({
+          height: "auto",
+          opacity: 1,
+          transition: { duration: 0.3, ease: "easeOut" }
+        });
+      } else {
+        controls.start({
+          height: 0,
+          opacity: 0,
+          transition: { duration: 0.3, ease: "easeIn" }
+        });
+      }
+    }, [isOpen, controls]);
+    
     return (
-      <div className="mb-6 bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden border border-gray-100 dark:border-gray-700">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: index * 0.1 }}
+        className="mb-6 bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden border border-gray-100 dark:border-gray-700 hover:shadow-lg transition-shadow duration-300"
+      >
         <button
           onClick={toggleAccordion}
           className="w-full px-6 py-5 text-left flex items-center justify-between focus:outline-none group"
         >
           <div className="flex items-center">
             <span className="text-2xl mr-4">{faq.icon}</span>
-            <h3 className="text-lg font-bold text-gray-800 dark:text-white group-hover:text-primary transition-colors duration-200">
+            <h3 className="text-lg font-bold text-gray-800 dark:text-white group-hover:text-primary transition-colors duration-200 font-playfair">
               {t(faq.question)}
             </h3>
           </div>
-          <div className="text-gray-400 dark:text-gray-500">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.3s ease' }}>
+          <motion.div
+            animate={{ rotate: isOpen ? 180 : 0 }}
+            transition={{ duration: 0.3 }}
+            className="text-gray-400 dark:text-gray-500"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="6 9 12 15 18 9"></polyline>
             </svg>
-          </div>
+          </motion.div>
         </button>
         
-        {isOpen && (
+        <motion.div
+          initial={{ height: 0, opacity: 0 }}
+          animate={controls}
+          className="overflow-hidden"
+        >
           <div className="px-6 pb-5 pt-0 text-gray-600 dark:text-gray-300">
             <div className="border-t border-gray-100 dark:border-gray-700 pt-4 mt-1">
               {t(faq.answer)}
             </div>
           </div>
-        )}
-      </div>
+        </motion.div>
+      </motion.div>
     );
   };
 
@@ -876,7 +920,7 @@ const Landing: React.FC = () => {
           >
             <motion.h2 
               variants={fadeInUp}
-              className="text-3xl md:text-4xl font-bold mb-6 gradient-text"
+              className="text-3xl md:text-4xl font-bold mb-6 gradient-text font-playfair"
             >
               {t('landing.faq.title')}
             </motion.h2>
@@ -907,7 +951,7 @@ const Landing: React.FC = () => {
               <Button 
                 variant="primary" 
                 size="lg"
-                className="shadow-lg shadow-primary/20"
+                className="shadow-lg shadow-primary/20 font-playfair"
               >
                 {t('landing.getStarted')}
               </Button>
@@ -919,29 +963,30 @@ const Landing: React.FC = () => {
       {/* Footer */}
       <footer className="bg-gray-800 dark:bg-gray-950 text-white py-16">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
             <div>
               <div className="flex items-center mb-6">
                 <div className="bg-gradient-to-r from-primary to-secondary w-10 h-10 rounded-lg flex items-center justify-center mr-2">
                   <span className="text-white text-lg font-bold">N</span>
                 </div>
-                <h2 className="text-xl font-bold">NIStego</h2>
+                <h2 className="text-xl font-bold font-playfair">NIStego</h2>
               </div>
               <p className="text-gray-400 mb-6">{t('landing.tagline')}</p>
+              <p className="text-gray-400 mb-6">{t('landing.hero.subtitle')}</p>
             </div>
             
             <div>
-              <h3 className="text-lg font-bold mb-6">{t('footer.links')}</h3>
+              <h3 className="text-lg font-bold mb-6 font-playfair">{t('footer.links')}</h3>
               <ul className="space-y-3">
                 <li><a href="#" className="text-gray-300 hover:text-white transition-colors">{t('footer.about')}</a></li>
-                <li><a href="#" className="text-gray-300 hover:text-white transition-colors">{t('landing.faq.title')}</a></li>
+                <li><a href="#faq" className="text-gray-300 hover:text-white transition-colors">{t('landing.faq.title')}</a></li>
                 <li><a href="#" className="text-gray-300 hover:text-white transition-colors">{t('footer.community')}</a></li>
                 <li><a href="#" className="text-gray-300 hover:text-white transition-colors">{t('footer.privacy')}</a></li>
               </ul>
             </div>
             
             <div>
-              <h3 className="text-lg font-bold mb-6">{t('footer.contact')}</h3>
+              <h3 className="text-lg font-bold mb-6 font-playfair">{t('footer.contact')}</h3>
               <ul className="space-y-3">
                 <li className="flex items-center">
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 mr-2 text-primary">
