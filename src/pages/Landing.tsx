@@ -1,11 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { motion, useScroll, useTransform, useMotionValue, useSpring, AnimatePresence, useAnimation } from 'framer-motion';
+import { motion, useScroll, useTransform, useMotionValue, useSpring, AnimatePresence } from 'framer-motion';
 import type { Variants } from 'framer-motion';
 import Button from '../shared/ui/Button';
 import { useMediaQuery } from 'react-responsive';
-import '@fontsource/playfair-display';
+// Комментируем импорт шрифта, чтобы избежать ошибки
+// import '@fontsource/playfair-display';
 
 const MAX_TRAIL_POINTS = 20;
 
@@ -18,15 +19,19 @@ const Landing: React.FC = () => {
   const [isHovering, setIsHovering] = useState(false);
   const [isClicking, setIsClicking] = useState(false);
   const [openFaqId, setOpenFaqId] = useState<string | null>(null);
+  const [cursorText, setCursorText] = useState<string>("");
+  const [cursorMode, setCursorMode] = useState<"default" | "hover" | "click" | "text" | "link" | "button">("default");
   
   // Cursor motion values
   const cursorX = useMotionValue(-100);
   const cursorY = useMotionValue(-100);
   const cursorSize = useMotionValue(20);
+  const cursorOpacity = useMotionValue(0);
   const springConfig = { damping: 25, stiffness: 300 };
   const cursorXSpring = useSpring(cursorX, springConfig);
   const cursorYSpring = useSpring(cursorY, springConfig);
   const cursorSizeSpring = useSpring(cursorSize, { damping: 15, stiffness: 150 });
+  const cursorOpacitySpring = useSpring(cursorOpacity, { damping: 25, stiffness: 300 });
 
   // Parallax scrolling effect
   const { scrollYProgress } = useScroll();
@@ -34,6 +39,11 @@ const Landing: React.FC = () => {
 
   // Mouse movement effect
   useEffect(() => {
+    // Задержка появления курсора для плавного входа
+    setTimeout(() => {
+      cursorOpacity.set(1);
+    }, 500);
+    
     const handleMouseMove = (e: MouseEvent) => {
       const { clientX, clientY } = e;
       setMousePosition({ x: clientX, y: clientY });
@@ -43,31 +53,59 @@ const Landing: React.FC = () => {
       // Update trail points
       setTrailPoints(prev => {
         const newPoints = [...prev, { x: clientX, y: clientY }];
-        // Keep only the last MAX_TRAIL_POINTS points
         return newPoints.slice(-MAX_TRAIL_POINTS);
       });
+      
+      // Определяем, над каким элементом находится курсор
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'A' || target.closest('a')) {
+        setCursorMode("link");
+        setCursorText("View");
+      } else if (target.tagName === 'BUTTON' || target.closest('button')) {
+        setCursorMode("button");
+        setCursorText("Click");
+      } else {
+        setCursorText("");
+        setCursorMode(isHovering ? "hover" : "default");
+      }
     };
     
     const handleMouseDown = () => {
       setIsClicking(true);
+      setCursorMode("click");
       cursorSize.set(16);
-      setTimeout(() => setIsClicking(false), 300);
+      setTimeout(() => {
+        setIsClicking(false);
+        setCursorMode(isHovering ? "hover" : "default");
+      }, 300);
     };
     
     const handleMouseUp = () => {
       cursorSize.set(20);
     };
+    
+    const handleMouseLeave = () => {
+      cursorOpacity.set(0);
+    };
+    
+    const handleMouseEnter = () => {
+      cursorOpacity.set(1);
+    };
 
     window.addEventListener("mousemove", handleMouseMove);
     window.addEventListener("mousedown", handleMouseDown);
     window.addEventListener("mouseup", handleMouseUp);
+    document.body.addEventListener("mouseleave", handleMouseLeave);
+    document.body.addEventListener("mouseenter", handleMouseEnter);
     
     return () => {
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("mousedown", handleMouseDown);
       window.removeEventListener("mouseup", handleMouseUp);
+      document.body.removeEventListener("mouseleave", handleMouseLeave);
+      document.body.removeEventListener("mouseenter", handleMouseEnter);
     };
-  }, [cursorX, cursorY, cursorSize]);
+  }, [cursorX, cursorY, cursorSize, cursorOpacity, isHovering]);
 
   // Intersection observer for section detection
   useEffect(() => {
@@ -125,35 +163,67 @@ const Landing: React.FC = () => {
     }
   };
 
+  // Новые варианты для курсора
   const cursorVariants: Variants = {
     default: {
-      height: 30,
-      width: 30,
+      height: 36,
+      width: 36,
       borderRadius: "50%",
-      backgroundColor: "rgba(0, 200, 151, 0.9)",
+      backgroundColor: "rgba(0, 200, 151, 0.2)",
+      border: "2px solid rgba(0, 200, 151, 0.8)",
       mixBlendMode: "difference" as const,
-      filter: "blur(1px)",
-      boxShadow: "0 0 15px 3px rgba(0, 200, 151, 0.8)",
+      boxShadow: "0 0 15px 3px rgba(0, 200, 151, 0.4), inset 0 0 10px rgba(255, 255, 255, 0.3)",
       x: 0,
-      y: 0
+      y: 0,
+      scale: 1
     },
     hover: {
       height: 60,
       width: 60,
-      backgroundColor: "rgba(0, 200, 151, 0.95)",
-      filter: "blur(2px)",
-      boxShadow: "0 0 20px 5px rgba(0, 200, 151, 0.9)",
+      borderRadius: "50%",
+      backgroundColor: "rgba(0, 200, 151, 0.3)",
+      border: "2px solid rgba(0, 200, 151, 0.9)",
+      mixBlendMode: "difference" as const,
+      boxShadow: "0 0 20px 5px rgba(0, 200, 151, 0.5), inset 0 0 15px rgba(255, 255, 255, 0.4)",
       x: 0,
-      y: 0
+      y: 0,
+      scale: 1
     },
     click: {
-      height: 25,
-      width: 25,
-      backgroundColor: "rgba(0, 86, 199, 0.95)",
-      filter: "blur(0px)",
-      boxShadow: "0 0 25px 6px rgba(0, 86, 199, 0.95)",
+      height: 30,
+      width: 30,
+      borderRadius: "50%",
+      backgroundColor: "rgba(0, 86, 199, 0.4)",
+      border: "2px solid rgba(0, 86, 199, 0.9)",
+      mixBlendMode: "difference" as const,
+      boxShadow: "0 0 25px 6px rgba(0, 86, 199, 0.6), inset 0 0 10px rgba(255, 255, 255, 0.6)",
       x: 0,
-      y: 0
+      y: 0,
+      scale: 0.9
+    },
+    link: {
+      height: 80,
+      width: 80,
+      borderRadius: "50%",
+      backgroundColor: "rgba(255, 86, 120, 0.2)",
+      border: "2px solid rgba(255, 86, 120, 0.8)",
+      mixBlendMode: "difference" as const,
+      boxShadow: "0 0 20px 5px rgba(255, 86, 120, 0.4), inset 0 0 15px rgba(255, 255, 255, 0.4)",
+      x: 0,
+      y: 0,
+      scale: 1
+    },
+    button: {
+      height: 70,
+      width: 70,
+      borderRadius: "50%",
+      backgroundColor: "rgba(255, 180, 0, 0.2)",
+      border: "2px solid rgba(255, 180, 0, 0.8)",
+      mixBlendMode: "difference" as const,
+      boxShadow: "0 0 20px 5px rgba(255, 180, 0, 0.4), inset 0 0 15px rgba(255, 255, 255, 0.4)",
+      x: 0,
+      y: 0,
+      scale: 1
     }
   };
 
@@ -334,6 +404,7 @@ const Landing: React.FC = () => {
     cursorSize.set(20);
   };
 
+  // Упрощенный компонент FaqItem без лишних анимаций при наведении
   const FaqItem = ({ faq, index }: { faq: typeof faqs[0], index: number }) => {
     const isOpen = openFaqId === faq.key;
     
@@ -351,8 +422,7 @@ const Landing: React.FC = () => {
         <button
           onClick={toggleAccordion}
           className="w-full px-6 py-5 text-left flex items-center justify-between focus:outline-none group"
-          onMouseEnter={handleMouseEnter}
-          onMouseLeave={handleMouseLeave}
+          // Убраны обработчики событий наведения мыши для устранения лагов
         >
           <div className="flex items-center">
             <span className="text-2xl mr-4">{faq.icon}</span>
@@ -394,48 +464,143 @@ const Landing: React.FC = () => {
 
   return (
     <div className="overflow-hidden cursor-none">
-      {/* Custom Creative Cursor with Trail Effect */}
+      {/* Креативный курсор с новыми эффектами */}
       <div className="fixed top-0 left-0 w-full h-full pointer-events-none z-50">
-        {/* Trail Points */}
-        {trailPoints.map((point, i) => {
-          const size = Math.max(4, (i / MAX_TRAIL_POINTS) * 12);
-          const opacity = (i / MAX_TRAIL_POINTS) * 0.9;
-          
-          return (
-            <motion.div
-              key={`trail-${i}`}
-              className="fixed rounded-full bg-primary"
-              style={{
-                width: size,
-                height: size,
-                opacity: opacity,
-                x: point.x - size / 2,
-                y: point.y - size / 2,
-                zIndex: 9999
-              }}
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ duration: 0.1 }}
-            />
-          );
-        })}
-        
-        {/* Main Cursor */}
+        {/* Основной круг курсора */}
         <motion.div
-          className="fixed top-0 left-0 rounded-full pointer-events-none bg-blend-difference"
+          className="fixed top-0 left-0 rounded-full pointer-events-none mix-blend-difference"
           style={{
             x: cursorXSpring,
             y: cursorYSpring,
-            width: cursorSizeSpring,
-            height: cursorSizeSpring,
+            opacity: cursorOpacitySpring,
             transform: 'translate(-50%, -50%)',
           }}
           variants={cursorVariants}
-          animate={isClicking ? "click" : isHovering ? "hover" : "default"}
+          animate={cursorMode}
+          transition={{ 
+            duration: 0.2,
+            ease: [0.16, 1, 0.3, 1] // Плавная анимация с небольшим отскоком
+          }}
+        >
+          {/* Текст внутри курсора */}
+          {cursorText && (
+            <motion.span 
+              className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 text-xs font-bold text-white whitespace-nowrap"
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.8 }}
+              transition={{ duration: 0.2 }}
+            >
+              {cursorText}
+            </motion.span>
+          )}
+        </motion.div>
+        
+        {/* Внутренний круг курсора */}
+        <motion.div
+          className="fixed top-0 left-0 rounded-full pointer-events-none bg-white"
+          style={{
+            x: cursorXSpring,
+            y: cursorYSpring,
+            opacity: cursorOpacitySpring,
+            width: 8,
+            height: 8,
+            transform: 'translate(-50%, -50%)',
+          }}
+          animate={{
+            scale: isClicking ? 0.5 : 1,
+          }}
           transition={{ duration: 0.2 }}
         />
         
-        {/* Ripple Effect on Click */}
+        {/* Эффект частиц вокруг курсора */}
+        {isClicking && (
+          <motion.div
+            className="fixed top-0 left-0 pointer-events-none"
+            style={{
+              x: mousePosition.x,
+              y: mousePosition.y,
+              translateX: "-50%",
+              translateY: "-50%"
+            }}
+          >
+            {[...Array(8)].map((_, i) => {
+              const angle = (i / 8) * Math.PI * 2;
+              const distance = Math.random() * 30 + 20;
+              return (
+                <motion.div
+                  key={`particle-${i}`}
+                  className="absolute rounded-full bg-primary"
+                  style={{
+                    width: Math.random() * 6 + 2,
+                    height: Math.random() * 6 + 2,
+                    x: Math.cos(angle) * 5,
+                    y: Math.sin(angle) * 5,
+                  }}
+                  animate={{
+                    x: Math.cos(angle) * distance,
+                    y: Math.sin(angle) * distance,
+                    opacity: [1, 0],
+                    scale: [1, 0.5],
+                  }}
+                  transition={{
+                    duration: Math.random() * 0.8 + 0.5,
+                    ease: "easeOut"
+                  }}
+                />
+              );
+            })}
+          </motion.div>
+        )}
+        
+        {/* Эффект магнитного притяжения к кнопкам */}
+        {cursorMode === "button" && (
+          <motion.div
+            className="fixed top-0 left-0 rounded-full pointer-events-none border-2 border-yellow-400"
+            style={{
+              x: cursorXSpring,
+              y: cursorYSpring,
+              width: 90,
+              height: 90,
+              opacity: 0.2,
+              transform: 'translate(-50%, -50%)',
+            }}
+            animate={{
+              scale: [1, 1.2, 1],
+            }}
+            transition={{
+              duration: 1.5,
+              repeat: Infinity,
+              ease: "easeInOut"
+            }}
+          />
+        )}
+        
+        {/* Эффект для ссылок */}
+        {cursorMode === "link" && (
+          <motion.div
+            className="fixed top-0 left-0 rounded-full pointer-events-none border-2 border-pink-500"
+            style={{
+              x: cursorXSpring,
+              y: cursorYSpring,
+              width: 100,
+              height: 100,
+              opacity: 0.2,
+              transform: 'translate(-50%, -50%)',
+            }}
+            animate={{
+              scale: [1, 1.2, 1],
+              rotate: [0, 180, 360],
+            }}
+            transition={{
+              duration: 3,
+              repeat: Infinity,
+              ease: "linear"
+            }}
+          />
+        )}
+        
+        {/* Эффект клика */}
         <AnimatePresence>
           {isClicking && (
             <motion.div
