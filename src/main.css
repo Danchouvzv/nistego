@@ -4,7 +4,7 @@
 
 /* Глобальные стили для курсора */
 body {
-  cursor: none;
+  cursor: none !important;
 }
 
 a, button, 
@@ -12,13 +12,13 @@ a, button,
 input, 
 select, 
 textarea {
-  cursor: none;
+  cursor: none !important;
 }
 
 /* Для мобильных устройств возвращаем стандартный курсор */
 @media (max-width: 768px) {
   body, a, button, [role="button"], input, select, textarea {
-    cursor: auto;
+    cursor: auto !important;
   }
 }
 
@@ -26,12 +26,15 @@ textarea {
 .cursor-custom {
   will-change: transform;
   transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 9999;
 }
 
 /* Для плавности анимаций курсора */
 .cursor-dot {
   pointer-events: none;
   transition: transform 0.15s ease, width 0.15s ease, height 0.15s ease, background-color 0.15s ease;
+  z-index: 9999;
 }
 
 /* Анимация волны при клике */

@@ -17,11 +17,12 @@ const Landing: React.FC = () => {
   const [trailPoints, setTrailPoints] = useState<{x: number, y: number}[]>([]);
   const [isHovering, setIsHovering] = useState(false);
   const [isClicking, setIsClicking] = useState(false);
+  const [openFaqId, setOpenFaqId] = useState<string | null>(null);
   
   // Cursor motion values
   const cursorX = useMotionValue(-100);
   const cursorY = useMotionValue(-100);
-  const cursorSize = useMotionValue(10);
+  const cursorSize = useMotionValue(20);
   const springConfig = { damping: 25, stiffness: 300 };
   const cursorXSpring = useSpring(cursorX, springConfig);
   const cursorYSpring = useSpring(cursorY, springConfig);
@@ -49,12 +50,12 @@ const Landing: React.FC = () => {
     
     const handleMouseDown = () => {
       setIsClicking(true);
-      cursorSize.set(8);
+      cursorSize.set(16);
       setTimeout(() => setIsClicking(false), 300);
     };
     
     const handleMouseUp = () => {
-      cursorSize.set(10);
+      cursorSize.set(20);
     };
 
     window.addEventListener("mousemove", handleMouseMove);
@@ -126,31 +127,31 @@ const Landing: React.FC = () => {
 
   const cursorVariants: Variants = {
     default: {
-      height: 20,
-      width: 20,
+      height: 30,
+      width: 30,
       borderRadius: "50%",
-      backgroundColor: "rgba(0, 200, 151, 0.6)",
+      backgroundColor: "rgba(0, 200, 151, 0.9)",
       mixBlendMode: "difference" as const,
       filter: "blur(1px)",
-      boxShadow: "0 0 5px 1px rgba(0, 200, 151, 0.6)",
+      boxShadow: "0 0 15px 3px rgba(0, 200, 151, 0.8)",
       x: 0,
       y: 0
     },
     hover: {
-      height: 40,
-      width: 40,
-      backgroundColor: "rgba(0, 200, 151, 0.8)",
+      height: 60,
+      width: 60,
+      backgroundColor: "rgba(0, 200, 151, 0.95)",
       filter: "blur(2px)",
-      boxShadow: "0 0 10px 2px rgba(0, 200, 151, 0.8)",
+      boxShadow: "0 0 20px 5px rgba(0, 200, 151, 0.9)",
       x: 0,
       y: 0
     },
     click: {
-      height: 15,
-      width: 15,
-      backgroundColor: "rgba(0, 86, 199, 0.8)",
+      height: 25,
+      width: 25,
+      backgroundColor: "rgba(0, 86, 199, 0.95)",
       filter: "blur(0px)",
-      boxShadow: "0 0 15px 3px rgba(0, 86, 199, 0.9)",
+      boxShadow: "0 0 25px 6px rgba(0, 86, 199, 0.95)",
       x: 0,
       y: 0
     }
@@ -325,50 +326,20 @@ const Landing: React.FC = () => {
 
   const handleMouseEnter = () => {
     setIsHovering(true);
-    cursorSize.set(30);
+    cursorSize.set(45);
   };
 
   const handleMouseLeave = () => {
     setIsHovering(false);
-    cursorSize.set(10);
+    cursorSize.set(20);
   };
 
   const FaqItem = ({ faq, index }: { faq: typeof faqs[0], index: number }) => {
-    const [isOpen, setIsOpen] = useState(false);
-    const controls = useAnimation();
+    const isOpen = openFaqId === faq.key;
     
     const toggleAccordion = () => {
-      setIsOpen(!isOpen);
-      if (!isOpen) {
-        controls.start({
-          height: "auto",
-          opacity: 1,
-          transition: { duration: 0.3, ease: "easeOut" }
-        });
-      } else {
-        controls.start({
-          height: 0,
-          opacity: 0,
-          transition: { duration: 0.3, ease: "easeIn" }
-        });
-      }
+      setOpenFaqId(isOpen ? null : faq.key);
     };
-    
-    useEffect(() => {
-      if (isOpen) {
-        controls.start({
-          height: "auto",
-          opacity: 1,
-          transition: { duration: 0.3, ease: "easeOut" }
-        });
-      } else {
-        controls.start({
-          height: 0,
-          opacity: 0,
-          transition: { duration: 0.3, ease: "easeIn" }
-        });
-      }
-    }, [isOpen, controls]);
     
     return (
       <motion.div
@@ -380,6 +351,8 @@ const Landing: React.FC = () => {
         <button
           onClick={toggleAccordion}
           className="w-full px-6 py-5 text-left flex items-center justify-between focus:outline-none group"
+          onMouseEnter={handleMouseEnter}
+          onMouseLeave={handleMouseLeave}
         >
           <div className="flex items-center">
             <span className="text-2xl mr-4">{faq.icon}</span>
@@ -390,7 +363,7 @@ const Landing: React.FC = () => {
           <motion.div
             animate={{ rotate: isOpen ? 180 : 0 }}
             transition={{ duration: 0.3 }}
-            className="text-gray-400 dark:text-gray-500"
+            className="text-gray-400 dark:text-gray-500 flex-shrink-0"
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="6 9 12 15 18 9"></polyline>
@@ -398,17 +371,23 @@ const Landing: React.FC = () => {
           </motion.div>
         </button>
         
-        <motion.div
-          initial={{ height: 0, opacity: 0 }}
-          animate={controls}
-          className="overflow-hidden"
-        >
-          <div className="px-6 pb-5 pt-0 text-gray-600 dark:text-gray-300">
-            <div className="border-t border-gray-100 dark:border-gray-700 pt-4 mt-1">
-              {t(faq.answer)}
-            </div>
-          </div>
-        </motion.div>
+        <AnimatePresence>
+          {isOpen && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              className="overflow-hidden"
+            >
+              <div className="px-6 pb-5 pt-0 text-gray-600 dark:text-gray-300">
+                <div className="border-t border-gray-100 dark:border-gray-700 pt-4 mt-1">
+                  {t(faq.answer)}
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </motion.div>
     );
   };
@@ -419,8 +398,8 @@ const Landing: React.FC = () => {
       <div className="fixed top-0 left-0 w-full h-full pointer-events-none z-50">
         {/* Trail Points */}
         {trailPoints.map((point, i) => {
-          const size = Math.max(2, (i / MAX_TRAIL_POINTS) * 8);
-          const opacity = (i / MAX_TRAIL_POINTS) * 0.7;
+          const size = Math.max(4, (i / MAX_TRAIL_POINTS) * 12);
+          const opacity = (i / MAX_TRAIL_POINTS) * 0.9;
           
           return (
             <motion.div
@@ -462,13 +441,13 @@ const Landing: React.FC = () => {
             <motion.div
               className="fixed rounded-full border-2 border-secondary pointer-events-none"
               style={{
-                x: mousePosition.x - 20,
-                y: mousePosition.y - 20,
+                x: mousePosition.x,
+                y: mousePosition.y,
                 translateX: "-50%",
                 translateY: "-50%"
               }}
-              initial={{ width: 10, height: 10, opacity: 1 }}
-              animate={{ width: 80, height: 80, opacity: 0 }}
+              initial={{ width: 20, height: 20, opacity: 1 }}
+              animate={{ width: 100, height: 100, opacity: 0 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.5 }}
             />
